@@ -33,9 +33,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _loadSettings() {
-    invertWeekParity = DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false) as bool;
+    invertWeekParity =
+        DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false)
+            as bool;
     final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
-    themeMode = DatabaseService.settingsBox.get('themeMode', defaultValue: 'system') as String;
+    themeMode =
+        DatabaseService.settingsBox.get('themeMode', defaultValue: 'system')
+            as String;
     exportPath = DatabaseService.settingsBox.get('exportPath') as String?;
     if (iso != null) week1StartDate = DateTime.tryParse(iso);
     setState(() {});
@@ -47,73 +51,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => StatefulBuilder(builder: (c, setStateDialog) {
-        return AlertDialog(
-          title: const Text('Export Folder'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<String>(
-                value: 'app',
-                groupValue: mode,
-                title: const Text('Use app documents folder (default)'),
-                onChanged: (v) => setStateDialog(() => mode = v ?? 'app'),
-              ),
-              RadioListTile<String>(
-                value: 'custom',
-                groupValue: mode,
-                title: const Text('Custom folder'),
-                onChanged: (v) => setStateDialog(() => mode = v ?? 'custom'),
-              ),
-              if (mode == 'custom')
-                TextField(
-                  controller: controller,
-                  decoration: const InputDecoration(
-                    labelText: 'Folder path',
-                    hintText: r'C:\Users\you\Downloads or /storage/emulated/0/Download',
-                  ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (c, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Export Folder'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  value: 'app',
+                  groupValue: mode,
+                  title: const Text('Use app documents folder (default)'),
+                  onChanged: (v) => setStateDialog(() => mode = v ?? 'app'),
                 ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
-            ElevatedButton(
-              onPressed: () async {
-                if (mode == 'app') {
-                  DatabaseService.settingsBox.delete('exportPath');
-                  setState(() => exportPath = null);
-                  Navigator.of(ctx).pop(true);
-                  return;
-                }
-
-                final path = controller.text.trim();
-                if (path.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a path')));
-                  return;
-                }
-
-                try {
-                  final dir = Directory(path);
-                  if (!await dir.exists()) {
-                    await dir.create(recursive: true);
-                  }
-                  // try writing a small hidden test file to verify writable
-                  final test = File('${dir.path}${Platform.pathSeparator}.detention_safe_test');
-                  await test.writeAsString('ok');
-                  await test.delete();
-
-                  DatabaseService.settingsBox.put('exportPath', path);
-                  setState(() => exportPath = path);
-                  Navigator.of(ctx).pop(true);
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to set folder: $e')));
-                }
-              },
-              child: const Text('Save'),
+                RadioListTile<String>(
+                  value: 'custom',
+                  groupValue: mode,
+                  title: const Text('Custom folder'),
+                  onChanged: (v) => setStateDialog(() => mode = v ?? 'custom'),
+                ),
+                if (mode == 'custom')
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: 'Folder path',
+                      hintText:
+                          r'C:\Users\you\Downloads or /storage/emulated/0/Download',
+                    ),
+                  ),
+              ],
             ),
-          ],
-        );
-      }),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (mode == 'app') {
+                    DatabaseService.settingsBox.delete('exportPath');
+                    setState(() => exportPath = null);
+                    Navigator.of(ctx).pop(true);
+                    return;
+                  }
+
+                  final path = controller.text.trim();
+                  if (path.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a path')),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final dir = Directory(path);
+                    if (!await dir.exists()) {
+                      await dir.create(recursive: true);
+                    }
+                    // try writing a small hidden test file to verify writable
+                    final test = File(
+                      '${dir.path}${Platform.pathSeparator}.detention_safe_test',
+                    );
+                    await test.writeAsString('ok');
+                    await test.delete();
+
+                    DatabaseService.settingsBox.put('exportPath', path);
+                    setState(() => exportPath = path);
+                    Navigator.of(ctx).pop(true);
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to set folder: $e')),
+                    );
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
     );
 
     if (result == true) setState(() {});
@@ -129,7 +145,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (picked != null) {
       setState(() => week1StartDate = picked);
-      DatabaseService.settingsBox.put('week1StartDate', picked.toIso8601String());
+      DatabaseService.settingsBox.put(
+        'week1StartDate',
+        picked.toIso8601String(),
+      );
     }
   }
 
@@ -168,7 +187,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _showProgressDialog('Repairing subject ↔ book mappings...');
     final updated = await bookService.repairSubjectBookMappings();
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Updated $updated subject mappings')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Updated $updated subject mappings')),
+    );
     setState(() {});
   }
 
@@ -177,16 +198,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _showProgressDialog('Repairing book statuses...');
     final result = await bookService.repairBookStatuses();
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Removed ${result['removed']} invalid statuses, added ${result['added']} defaults'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Removed ${result['removed']} invalid statuses, added ${result['added']} defaults',
+        ),
+      ),
+    );
     setState(() {});
   }
 
   Future<void> _resetExportPathQuick() async {
     DatabaseService.settingsBox.delete('exportPath');
     setState(() => exportPath = null);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export path reset to app documents folder')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Export path reset to app documents folder'),
+      ),
+    );
   }
 
   Future<void> _runAllFixes() async {
@@ -194,9 +223,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _showProgressDialog('Running all fixes...');
     final summary = await bookService.runAllRepairs();
     Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Updated ${summary['updatedSubjects']} subjects; removed ${summary['statusesRemoved']} statuses; added ${summary['statusesAdded']}'),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Updated ${summary['updatedSubjects']} subjects; removed ${summary['statusesRemoved']} statuses; added ${summary['statusesAdded']}',
+        ),
+      ),
+    );
     setState(() {});
   }
 
@@ -263,22 +296,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Special lessons
       final specialBox = DatabaseService.specialLessonsBox;
-      payload['special_lessons'] = specialBox.values.whereType<SpecialLesson>().map((s) {
-        return {
-          'id': s.id,
-          'date': s.date.toIso8601String(),
-          'subjectId': s.subjectId,
-          'startHour': s.startHour,
-          'startMinute': s.startMinute,
-          'endHour': s.endHour,
-          'endMinute': s.endMinute,
-          'originalLessonId': s.originalLessonId,
-          'notes': s.notes,
-        };
-      }).toList();
+      payload['special_lessons'] = specialBox.values
+          .whereType<SpecialLesson>()
+          .map((s) {
+            return {
+              'id': s.id,
+              'date': s.date.toIso8601String(),
+              'subjectId': s.subjectId,
+              'startHour': s.startHour,
+              'startMinute': s.startMinute,
+              'endHour': s.endHour,
+              'endMinute': s.endMinute,
+              'originalLessonId': s.originalLessonId,
+              'notes': s.notes,
+            };
+          })
+          .toList();
 
       // Settings
-      payload['settings'] = Map.fromEntries(DatabaseService.settingsBox.keys.map((k) => MapEntry(k.toString(), DatabaseService.settingsBox.get(k))));
+      payload['settings'] = Map.fromEntries(
+        DatabaseService.settingsBox.keys.map(
+          (k) => MapEntry(k.toString(), DatabaseService.settingsBox.get(k)),
+        ),
+      );
 
       final jsonStr = const JsonEncoder.withIndent('  ').convert(payload);
       String? custom = DatabaseService.settingsBox.get('exportPath') as String?;
@@ -290,7 +330,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         dir = await getApplicationDocumentsDirectory();
       }
 
-      final fileName = 'detention_safe_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
+      final fileName =
+          'detention_safe_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
       final file = File('${dir.path}${Platform.pathSeparator}$fileName');
       await file.writeAsString(jsonStr);
 
@@ -301,7 +342,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           title: const Text('Export Saved'),
           content: Text('Export saved to:\n${file.path}'),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
@@ -311,7 +355,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Export Failed'),
           content: Text(e.toString()),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -349,8 +398,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('No import files found'),
-          content: Text('No JSON files were found in the app documents folder:\n${dir.path}\n\nPlease place your export JSON file there and try again.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          content: Text(
+            'No JSON files were found in the app documents folder:\n${dir.path}\n\nPlease place your export JSON file there and try again.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
       return;
@@ -380,10 +436,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Import Data'),
-        content: const Text('Importing will overwrite the app data. Please back up current data first. Continue?'),
+        content: const Text(
+          'Importing will overwrite the app data. Please back up current data first. Continue?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Import')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Import'),
+          ),
         ],
       ),
     );
@@ -391,7 +455,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm != true) return;
 
     try {
-      final Map<String, dynamic> payload = json.decode(content) as Map<String, dynamic>;
+      final Map<String, dynamic> payload =
+          json.decode(content) as Map<String, dynamic>;
 
       // Clear existing boxes
       await DatabaseService.subjectsBox.clear();
@@ -420,7 +485,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             id: item['id'] as int,
             subjectId: item['subjectId'] as int,
             description: item['description'] as String?,
-            createdAt: item['createdAt'] != null ? DateTime.parse(item['createdAt'] as String) : DateTime.now(),
+            createdAt: item['createdAt'] != null
+                ? DateTime.parse(item['createdAt'] as String)
+                : DateTime.now(),
           );
           await DatabaseService.booksBox.put(b.id, b);
         }
@@ -453,9 +520,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             startMinute: item['startMinute'] as int,
             endHour: item['endHour'] as int,
             endMinute: item['endMinute'] as int,
-            recurrenceType: RecurrenceType.values[item['recurrenceType'] as int],
+            recurrenceType:
+                RecurrenceType.values[item['recurrenceType'] as int],
             customIntervalWeeks: item['customIntervalWeeks'] as int?,
-            startDate: item['startDate'] != null ? DateTime.parse(item['startDate'] as String) : null,
+            startDate: item['startDate'] != null
+                ? DateTime.parse(item['startDate'] as String)
+                : null,
             templateId: item['templateId'] as String?,
             notes: item['notes'] as String?,
             weekNumber: item['weekNumber'] as int? ?? 0,
@@ -498,7 +568,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Import Successful'),
           content: const Text('Data imported successfully.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } catch (e) {
@@ -507,7 +582,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Import Failed'),
           content: Text(e.toString()),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -518,10 +598,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Import Data'),
-        content: const Text('Importing will overwrite the app data. Please back up current data first. Continue?'),
+        content: const Text(
+          'Importing will overwrite the app data. Please back up current data first. Continue?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Import')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Import'),
+          ),
         ],
       ),
     );
@@ -529,7 +617,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirm != true) return;
 
     try {
-      final Map<String, dynamic> payload = json.decode(content) as Map<String, dynamic>;
+      final Map<String, dynamic> payload =
+          json.decode(content) as Map<String, dynamic>;
 
       // Clear existing boxes
       await DatabaseService.subjectsBox.clear();
@@ -558,7 +647,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             id: item['id'] as int,
             subjectId: item['subjectId'] as int,
             description: item['description'] as String?,
-            createdAt: item['createdAt'] != null ? DateTime.parse(item['createdAt'] as String) : DateTime.now(),
+            createdAt: item['createdAt'] != null
+                ? DateTime.parse(item['createdAt'] as String)
+                : DateTime.now(),
           );
           await DatabaseService.booksBox.put(b.id, b);
         }
@@ -591,9 +682,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             startMinute: item['startMinute'] as int,
             endHour: item['endHour'] as int,
             endMinute: item['endMinute'] as int,
-            recurrenceType: RecurrenceType.values[item['recurrenceType'] as int],
+            recurrenceType:
+                RecurrenceType.values[item['recurrenceType'] as int],
             customIntervalWeeks: item['customIntervalWeeks'] as int?,
-            startDate: item['startDate'] != null ? DateTime.parse(item['startDate'] as String) : null,
+            startDate: item['startDate'] != null
+                ? DateTime.parse(item['startDate'] as String)
+                : null,
             templateId: item['templateId'] as String?,
             notes: item['notes'] as String?,
             weekNumber: item['weekNumber'] as int? ?? 0,
@@ -635,7 +729,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Import Successful'),
           content: const Text('Data imported successfully.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     } catch (e) {
@@ -644,7 +743,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('Import Failed'),
           content: Text(e.toString()),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -663,12 +767,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               value: invertWeekParity,
               onChanged: _toggleInvert,
               title: const Text('Invert Week 1 / Week 2'),
-              subtitle: const Text('Flip the parity used for bi-weekly lessons'),
+              subtitle: const Text(
+                'Flip the parity used for bi-weekly lessons',
+              ),
             ),
             const SizedBox(height: 16),
             ListTile(
               title: const Text('Reference Week 1 Date'),
-              subtitle: Text(week1StartDate != null ? DateFormat.yMMMMd().format(week1StartDate!) : 'Not set'),
+              subtitle: Text(
+                week1StartDate != null
+                    ? DateFormat.yMMMMd().format(week1StartDate!)
+                    : 'Not set',
+              ),
               trailing: TextButton(
                 onPressed: _pickWeek1Date,
                 child: const Text('Set Date'),
@@ -677,7 +787,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             ListTile(
               title: const Text('Theme'),
-              subtitle: Text(themeMode[0].toUpperCase() + themeMode.substring(1)),
+              subtitle: Text(
+                themeMode[0].toUpperCase() + themeMode.substring(1),
+              ),
               trailing: DropdownButton<String>(
                 value: themeMode,
                 items: const [
@@ -711,9 +823,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 12),
             ListTile(
               title: const Text('Export Folder'),
-              subtitle: Text(exportPath == null || exportPath!.isEmpty
-                  ? 'App documents folder (default)'
-                  : exportPath!),
+              subtitle: Text(
+                exportPath == null || exportPath!.isEmpty
+                    ? 'App documents folder (default)'
+                    : exportPath!,
+              ),
               trailing: TextButton(
                 onPressed: _changeExportPath,
                 child: const Text('Change'),
@@ -733,7 +847,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Fixes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Fixes',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     const Text('Run automated repairs for common data issues.'),
                     const SizedBox(height: 12),
@@ -752,10 +872,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ElevatedButton.icon(
                       onPressed: () async {
                         final bookService = context.read<BookService>();
-                        await _showProgressDialog('Recreating missing book records...');
-                        final created = await bookService.recreateMissingBooksFromSubjects();
+                        await _showProgressDialog(
+                          'Recreating missing book records...',
+                        );
+                        final created = await bookService
+                            .recreateMissingBooksFromSubjects();
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recreated $created missing book records')));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Recreated $created missing book records',
+                            ),
+                          ),
+                        );
                         setState(() {});
                       },
                       icon: const Icon(Icons.restore_page),
@@ -778,7 +907,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('Notes: If a lesson has its own start date that will be used before this global setting.'),
+            const Text(
+              'Notes: If a lesson has its own start date that will be used before this global setting.',
+            ),
           ],
         ),
       ),

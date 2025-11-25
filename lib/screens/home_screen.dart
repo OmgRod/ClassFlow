@@ -21,11 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
     BooksScreen(),
   ];
 
-  final List<String> _titles = const [
-    'Timetable',
-    'Subjects',
-    'Books & QR',
-  ];
+  final List<String> _titles = const ['Timetable', 'Subjects', 'Books & QR'];
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {

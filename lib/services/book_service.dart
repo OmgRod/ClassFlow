@@ -20,7 +20,10 @@ class BookService extends ChangeNotifier {
       final subjects = DatabaseService.subjectsBox.values.toList();
 
       for (final subj in subjects) {
-        final ids = allBooks.where((b) => b.subjectId == subj.id).map((b) => b.id).toList();
+        final ids = allBooks
+            .where((b) => b.subjectId == subj.id)
+            .map((b) => b.id)
+            .toList();
         // Only write if different to avoid extra writes
         if (!(ListEquality().equals(ids, subj.bookIds))) {
           subj.bookIds
@@ -35,7 +38,9 @@ class BookService extends ChangeNotifier {
   void _loadBooks() {
     _books = DatabaseService.booksBox.values.toList();
     try {
-      debugPrint('BookService: loaded ${_books.length} books from box; keys=${DatabaseService.booksBox.keys.toList()}');
+      debugPrint(
+        'BookService: loaded ${_books.length} books from box; keys=${DatabaseService.booksBox.keys.toList()}',
+      );
     } catch (_) {}
     notifyListeners();
   }
@@ -159,7 +164,9 @@ class BookService extends ChangeNotifier {
   String getBookStatus(int bookId) {
     try {
       final map = Map<String, dynamic>.from(
-          DatabaseService.settingsBox.get('bookStatuses', defaultValue: {}) as Map);
+        DatabaseService.settingsBox.get('bookStatuses', defaultValue: {})
+            as Map,
+      );
       return map['$bookId'] as String? ?? 'available';
     } catch (_) {
       return 'available';
@@ -170,15 +177,18 @@ class BookService extends ChangeNotifier {
   Future<void> setBookStatus(int bookId, String status) async {
     final box = DatabaseService.settingsBox;
     final existing = Map<String, dynamic>.from(
-        box.get('bookStatuses', defaultValue: {}) as Map);
+      box.get('bookStatuses', defaultValue: {}) as Map,
+    );
     existing['$bookId'] = status;
     await box.put('bookStatuses', existing);
     notifyListeners();
   }
 
   /// Convenience helpers
-  Future<void> markBookMissing(int bookId) async => setBookStatus(bookId, 'missing');
-  Future<void> markBookHandedIn(int bookId) async => setBookStatus(bookId, 'handed_in');
+  Future<void> markBookMissing(int bookId) async =>
+      setBookStatus(bookId, 'missing');
+  Future<void> markBookHandedIn(int bookId) async =>
+      setBookStatus(bookId, 'handed_in');
 
   /// Public repair method: ensure that each Subject.bookIds reflects current books
   /// Returns the number of subjects that were updated.
@@ -189,7 +199,10 @@ class BookService extends ChangeNotifier {
       final subjects = DatabaseService.subjectsBox.values.toList();
 
       for (final subj in subjects) {
-        final ids = allBooks.where((b) => b.subjectId == subj.id).map((b) => b.id).toList();
+        final ids = allBooks
+            .where((b) => b.subjectId == subj.id)
+            .map((b) => b.id)
+            .toList();
         if (!(ListEquality().equals(ids, subj.bookIds))) {
           subj.bookIds
             ..clear()
@@ -212,7 +225,9 @@ class BookService extends ChangeNotifier {
     final result = <String, int>{'removed': 0, 'added': 0};
     try {
       final box = DatabaseService.settingsBox;
-      final existing = Map<String, dynamic>.from(box.get('bookStatuses', defaultValue: {}) as Map);
+      final existing = Map<String, dynamic>.from(
+        box.get('bookStatuses', defaultValue: {}) as Map,
+      );
       final bookIds = DatabaseService.booksBox.keys.cast<int>().toSet();
 
       final newMap = <String, String>{};
@@ -270,7 +285,9 @@ class BookService extends ChangeNotifier {
               created++;
               existingIds.add(id);
             } catch (e, st) {
-              debugPrint('Failed to recreate book $id for subject ${subj.id}: $e\n$st');
+              debugPrint(
+                'Failed to recreate book $id for subject ${subj.id}: $e\n$st',
+              );
             }
           }
         }

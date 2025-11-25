@@ -27,10 +27,7 @@ class BooksScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'No subjects with books',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 8),
                 const Text('Add subjects with books first'),
@@ -40,7 +37,9 @@ class BooksScreen extends StatelessWidget {
         }
 
         // Group books by subject
-        final subjectsWithBooks = subjects.where((s) => s.bookIds.isNotEmpty).toList();
+        final subjectsWithBooks = subjects
+            .where((s) => s.bookIds.isNotEmpty)
+            .toList();
 
         if (subjectsWithBooks.isEmpty) {
           return Center(
@@ -55,10 +54,7 @@ class BooksScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'No books added',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 8),
                 const Text('Add book IDs to your subjects'),
@@ -191,7 +187,10 @@ class _SubjectBooksCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     margin: const EdgeInsets.only(right: 8),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.12),
@@ -200,7 +199,10 @@ class _SubjectBooksCard extends StatelessWidget {
                     ),
                     child: Text(
                       statusLabel,
-                      style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -210,10 +212,8 @@ class _SubjectBooksCard extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => QrCodeScreen(
-                            subject: subject,
-                            bookId: bookId,
-                          ),
+                          builder: (context) =>
+                              QrCodeScreen(subject: subject, bookId: bookId),
                         ),
                       );
                     },

@@ -54,114 +54,126 @@ class _ScannerScreenState extends State<ScannerScreen> {
       ),
       body: Column(
         children: [
-        // Scanner view
-        Expanded(
-          flex: 3,
-          child: Stack(
-            children: [
-              // Camera view
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+          // Scanner view
+          Expanded(
+            flex: 3,
+            child: Stack(
+              children: [
+                // Camera view
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                  child: MobileScanner(
+                    controller: _controller,
+                    onDetect: _onDetect,
+                    errorBuilder: (context, error, child) {
+                      return _buildCameraError(
+                        error.errorDetails?.message ?? 'Camera error',
+                      );
+                    },
+                  ),
                 ),
-                child: MobileScanner(
-                  controller: _controller,
-                  onDetect: _onDetect,
-                  errorBuilder: (context, error, child) {
-                    return _buildCameraError(error.errorDetails?.message ?? 'Camera error');
-                  },
-                ),
-              ),
-              // Scanning overlay
-              _buildScannerOverlay(),
-              // Controls
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Column(
-                  children: [
-                    // Torch toggle
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: ValueListenableBuilder(
-                          valueListenable: _controller?.torchState ?? ValueNotifier(TorchState.off),
-                          builder: (context, state, child) {
-                            return Icon(
-                              state == TorchState.on ? Icons.flash_on : Icons.flash_off,
-                              color: Colors.white,
-                            );
-                          },
+                // Scanning overlay
+                _buildScannerOverlay(),
+                // Controls
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Column(
+                    children: [
+                      // Torch toggle
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        onPressed: () => _controller?.toggleTorch(),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Camera switch
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
-                        onPressed: () => _controller?.switchCamera(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Scan status indicator
-              Positioned(
-                bottom: 24,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: _isScanning ? Colors.green : Colors.orange,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _isScanning ? Icons.qr_code_scanner : Icons.pause,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isScanning ? 'Scanning...' : 'Paused',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        child: IconButton(
+                          icon: ValueListenableBuilder(
+                            valueListenable:
+                                _controller?.torchState ??
+                                ValueNotifier(TorchState.off),
+                            builder: (context, state, child) {
+                              return Icon(
+                                state == TorchState.on
+                                    ? Icons.flash_on
+                                    : Icons.flash_off,
+                                color: Colors.white,
+                              );
+                            },
                           ),
+                          onPressed: () => _controller?.toggleTorch(),
                         ),
-                      ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Camera switch
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.flip_camera_ios,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => _controller?.switchCamera(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Scan status indicator
+                Positioned(
+                  bottom: 24,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isScanning ? Colors.green : Colors.orange,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isScanning ? Icons.qr_code_scanner : Icons.pause,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isScanning ? 'Scanning...' : 'Paused',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // Result panel
-        Expanded(
-          flex: 2,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: _buildResultPanel(),
+          // Result panel
+          Expanded(
+            flex: 2,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              child: _buildResultPanel(),
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -242,7 +254,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final cornerColor = _scannedSubject != null
         ? Colors.green
         : (_hasError ? Colors.red : Colors.white);
-    
+
     return Align(
       alignment: alignment,
       child: Container(
@@ -250,16 +262,24 @@ class _ScannerScreenState extends State<ScannerScreen> {
         height: 30,
         decoration: BoxDecoration(
           border: Border(
-            top: alignment == Alignment.topLeft || alignment == Alignment.topRight
+            top:
+                alignment == Alignment.topLeft ||
+                    alignment == Alignment.topRight
                 ? BorderSide(color: cornerColor, width: 4)
                 : BorderSide.none,
-            bottom: alignment == Alignment.bottomLeft || alignment == Alignment.bottomRight
+            bottom:
+                alignment == Alignment.bottomLeft ||
+                    alignment == Alignment.bottomRight
                 ? BorderSide(color: cornerColor, width: 4)
                 : BorderSide.none,
-            left: alignment == Alignment.topLeft || alignment == Alignment.bottomLeft
+            left:
+                alignment == Alignment.topLeft ||
+                    alignment == Alignment.bottomLeft
                 ? BorderSide(color: cornerColor, width: 4)
                 : BorderSide.none,
-            right: alignment == Alignment.topRight || alignment == Alignment.bottomRight
+            right:
+                alignment == Alignment.topRight ||
+                    alignment == Alignment.bottomRight
                 ? BorderSide(color: cornerColor, width: 4)
                 : BorderSide.none,
           ),
@@ -283,11 +303,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          main,
-          const SizedBox(height: 12),
-          _buildManualFallback(),
-        ],
+        children: [main, const SizedBox(height: 12), _buildManualFallback()],
       ),
     );
   }
@@ -327,7 +343,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 value: _manualSelectedBookId,
                 items: books.map((b) {
                   final subj = subjectService.getSubjectById(b.subjectId);
-                  final label = subj != null ? '${subj.name} - ${b.id}' : 'Book ${b.id}';
+                  final label = subj != null
+                      ? '${subj.name} - ${b.id}'
+                      : 'Book ${b.id}';
                   return DropdownMenuItem<int>(value: b.id, child: Text(label));
                 }).toList(),
                 onChanged: (v) => setState(() => _manualSelectedBookId = v),
@@ -337,7 +355,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _manualSelectedBookId == null ? null : _confirmManualSelection,
+                      onPressed: _manualSelectedBookId == null
+                          ? null
+                          : _confirmManualSelection,
                       child: const Text('Use Selected Book'),
                     ),
                   ),
@@ -349,18 +369,26 @@ class _ScannerScreenState extends State<ScannerScreen> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: ((_manualSelectedBookId ?? _scannedBookId) == null)
+                    onPressed:
+                        ((_manualSelectedBookId ?? _scannedBookId) == null)
                         ? null
-                        : () => _reportBookStatus('teacher', bookId: _manualSelectedBookId),
+                        : () => _reportBookStatus(
+                            'teacher',
+                            bookId: _manualSelectedBookId,
+                          ),
                     child: const Text('My teacher has my book'),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: ((_manualSelectedBookId ?? _scannedBookId) == null)
+                    onPressed:
+                        ((_manualSelectedBookId ?? _scannedBookId) == null)
                         ? null
-                        : () => _reportBookStatus('missing', bookId: _manualSelectedBookId),
+                        : () => _reportBookStatus(
+                            'missing',
+                            bookId: _manualSelectedBookId,
+                          ),
                     child: const Text("I can't find my book"),
                   ),
                 ),
@@ -393,16 +421,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
     final bookService = context.read<BookService>();
     final idToUse = bookId ?? _scannedBookId;
     if (idToUse == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No book selected')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No book selected')));
       return;
     }
 
     if (type == 'teacher') {
       await bookService.markBookHandedIn(idToUse);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as handed in')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Marked as handed in')));
     } else {
       await bookService.markBookMissing(idToUse);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as missing')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Marked as missing')));
     }
 
     // Refresh local state and services
@@ -419,26 +453,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.qr_code_scanner,
-              size: 48,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.qr_code_scanner, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 16),
             Text(
               'Point camera at a QR code',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 8),
             Text(
               'QR codes are in format: SubjectID-BookID-SubjectName',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
               textAlign: TextAlign.center,
             ),
           ],
@@ -455,11 +479,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.red.shade400,
-            ),
+            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
             const SizedBox(height: 12),
             Text(
               'Invalid QR Code',
@@ -538,7 +558,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           const Text(
                             'Found!',
@@ -559,9 +583,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       ),
                       Text(
                         'Book ID: $_scannedBookId',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                        ),
+                        style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
                   ),
@@ -599,7 +621,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     for (final barcode in capture.barcodes) {
       if (barcode.rawValue == null) continue;
-      
+
       final code = barcode.rawValue!;
       if (code == _lastScannedCode) continue;
 
@@ -620,7 +642,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void _parseCode(String code) {
     // Expected format: SubjectID-BookID-SubjectName
     final parts = code.split('-');
-    
+
     if (parts.length < 3) {
       setState(() {
         _hasError = true;
@@ -648,7 +670,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (subject == null) {
       setState(() {
         _hasError = true;
-        _errorMessage = 'Subject with ID $subjectId not found.\nName from code: $subjectName';
+        _errorMessage =
+            'Subject with ID $subjectId not found.\nName from code: $subjectName';
       });
       return;
     }
@@ -657,7 +680,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (subject.name != subjectName) {
       setState(() {
         _hasError = true;
-        _errorMessage = 'Subject name mismatch.\nExpected: ${subject.name}\nGot: $subjectName';
+        _errorMessage =
+            'Subject name mismatch.\nExpected: ${subject.name}\nGot: $subjectName';
       });
       return;
     }
@@ -695,9 +719,14 @@ class _ScannerScreenState extends State<ScannerScreen> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Camera Permission'),
-          content: const Text('Camera permission is permanently denied. Please enable it in app settings.'),
+          content: const Text(
+            'Camera permission is permanently denied. Please enable it in app settings.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () {
                 openAppSettings();
@@ -714,8 +743,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Camera Permission'),
-          content: const Text('Camera permission was denied. The scanner cannot run without access.'),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+          content: const Text(
+            'Camera permission was denied. The scanner cannot run without access.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
         ),
       );
     }
@@ -748,10 +784,9 @@ class _ScannerOverlayPainter extends CustomPainter {
       Path.combine(
         PathOperation.difference,
         Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
-        Path()
-          ..addRRect(
-            RRect.fromRectAndRadius(scanRect, const Radius.circular(12)),
-          ),
+        Path()..addRRect(
+          RRect.fromRectAndRadius(scanRect, const Radius.circular(12)),
+        ),
       ),
       paint,
     );

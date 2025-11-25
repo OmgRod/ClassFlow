@@ -87,17 +87,28 @@ class Lesson extends HiveObject {
 
   /// Get day name
   String get dayName {
-    const days = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const days = [
+      '',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     return days[dayOfWeek];
   }
 
   /// Check if this lesson overlaps with another lesson
   bool overlaps(Lesson other) {
     if (dayOfWeek != other.dayOfWeek) return false;
-    if (weekNumber != 0 && other.weekNumber != 0 && weekNumber != other.weekNumber) {
+    if (weekNumber != 0 &&
+        other.weekNumber != 0 &&
+        weekNumber != other.weekNumber) {
       return false;
     }
-    
+
     final thisStart = startHour * 60 + startMinute;
     final thisEnd = endHour * 60 + endMinute;
     final otherStart = other.startHour * 60 + other.startMinute;
@@ -107,7 +118,11 @@ class Lesson extends HiveObject {
   }
 
   /// Check if this lesson occurs on a given date
-  bool occursOn(DateTime date, {bool invertWeekParity = false, DateTime? globalBase}) {
+  bool occursOn(
+    DateTime date, {
+    bool invertWeekParity = false,
+    DateTime? globalBase,
+  }) {
     if (date.weekday != dayOfWeek) return false;
 
     if (startDate != null && date.isBefore(startDate!)) return false;

@@ -15,11 +15,7 @@ class QrCodeScreen extends StatefulWidget {
   final Subject subject;
   final int bookId;
 
-  const QrCodeScreen({
-    super.key,
-    required this.subject,
-    required this.bookId,
-  });
+  const QrCodeScreen({super.key, required this.subject, required this.bookId});
 
   @override
   State<QrCodeScreen> createState() => _QrCodeScreenState();
@@ -97,9 +93,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Book ID: ${widget.bookId}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                            ),
+                            style: TextStyle(color: Colors.grey.shade600),
                           ),
                         ],
                       ),
@@ -139,11 +133,15 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
                         backgroundColor: Colors.white,
                         eyeStyle: QrEyeStyle(
                           eyeShape: QrEyeShape.square,
-                          color: _isSubtle ? Colors.grey.shade300 : Colors.black,
+                          color: _isSubtle
+                              ? Colors.grey.shade300
+                              : Colors.black,
                         ),
                         dataModuleStyle: QrDataModuleStyle(
                           dataModuleShape: QrDataModuleShape.square,
-                          color: _isSubtle ? Colors.grey.shade300 : Colors.black,
+                          color: _isSubtle
+                              ? Colors.grey.shade300
+                              : Colors.black,
                         ),
                       ),
                     ),
@@ -226,8 +224,8 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
 
   Future<Uint8List?> _captureQrCode() async {
     try {
-      final boundary = _qrKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
+      final boundary =
+          _qrKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) return null;
 
       final image = await boundary.toImage(pixelRatio: 3.0);
@@ -263,7 +261,8 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         directory = await getApplicationDocumentsDirectory();
       }
 
-      final fileName = 'qr_${code.replaceAll('-', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
+      final fileName =
+          'qr_${code.replaceAll('-', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes);
 
@@ -280,9 +279,9 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error saving: $e')));
       }
     } finally {
       if (mounted) {
@@ -314,9 +313,9 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       await _shareFile(file.path);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error sharing: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error sharing: $e')));
       }
     } finally {
       if (mounted) {
@@ -328,7 +327,8 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
   Future<void> _shareFile(String path) async {
     await Share.shareXFiles(
       [XFile(path)],
-      text: 'QR Code for ${widget.subject.name} - Book ${widget.bookId}\nCode: $code',
+      text:
+          'QR Code for ${widget.subject.name} - Book ${widget.bookId}\nCode: $code',
     );
   }
 }

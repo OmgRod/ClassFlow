@@ -36,7 +36,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
           children: [
             // Week number selector
             _buildWeekSelector(),
-            
+
             // Calendar
             TableCalendar(
               firstDay: DateTime.utc(2020, 1, 1),
@@ -77,12 +77,14 @@ class _TimetableScreenState extends State<TimetableScreen> {
               eventLoader: (day) {
                 return timetableService.getLessonsForCalendarDate(
                   day,
-                  weekNumber: _selectedWeekNumber == 0 ? null : _selectedWeekNumber,
+                  weekNumber: _selectedWeekNumber == 0
+                      ? null
+                      : _selectedWeekNumber,
                 );
               },
             ),
             const Divider(),
-            
+
             // Lessons for selected day
             Expanded(
               child: _buildLessonsList(timetableService, subjectService),
@@ -128,7 +130,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
     );
   }
 
-  Widget _buildLessonsList(TimetableService timetableService, SubjectService subjectService) {
+  Widget _buildLessonsList(
+    TimetableService timetableService,
+    SubjectService subjectService,
+  ) {
     if (_selectedDay == null) {
       return const Center(child: Text('Select a day'));
     }
@@ -138,7 +143,9 @@ class _TimetableScreenState extends State<TimetableScreen> {
       _selectedDay!,
       weekNumber: _selectedWeekNumber == 0 ? null : _selectedWeekNumber,
     );
-    final specialLessons = timetableService.getSpecialLessonsForDate(_selectedDay!);
+    final specialLessons = timetableService.getSpecialLessonsForDate(
+      _selectedDay!,
+    );
 
     if (lessons.isEmpty) {
       return _buildEmptyDayView(dayOfWeek);
@@ -152,7 +159,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Special lessons for this date', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Special lessons for this date',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 ...specialLessons.map((s) {
                   final subject = subjectService.getSubjectById(s.subjectId);
@@ -160,10 +170,13 @@ class _TimetableScreenState extends State<TimetableScreen> {
                     color: Colors.yellow.shade50,
                     child: ListTile(
                       title: Text(subject?.name ?? 'Unknown Subject'),
-                      subtitle: Text('${s.startHour.toString().padLeft(2,'0')}:${s.startMinute.toString().padLeft(2,'0')} - ${s.endHour.toString().padLeft(2,'0')}:${s.endMinute.toString().padLeft(2,'0')}'),
+                      subtitle: Text(
+                        '${s.startHour.toString().padLeft(2, '0')}:${s.startMinute.toString().padLeft(2, '0')} - ${s.endHour.toString().padLeft(2, '0')}:${s.endMinute.toString().padLeft(2, '0')}',
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => timetableService.deleteSpecialLesson(s.id),
+                        onPressed: () =>
+                            timetableService.deleteSpecialLesson(s.id),
                       ),
                     ),
                   );
@@ -212,7 +225,11 @@ class _TimetableScreenState extends State<TimetableScreen> {
               const SizedBox(height: 8),
               FloatingActionButton.small(
                 heroTag: 'scan_day',
-                onPressed: () => _openDayBookManager(_selectedDay!, timetableService, subjectService),
+                onPressed: () => _openDayBookManager(
+                  _selectedDay!,
+                  timetableService,
+                  subjectService,
+                ),
                 child: const Icon(Icons.qr_code_scanner),
                 tooltip: 'Scan / Manage books for this day',
               ),
@@ -223,7 +240,11 @@ class _TimetableScreenState extends State<TimetableScreen> {
     );
   }
 
-  void _openDayBookManager(DateTime day, TimetableService timetableService, SubjectService subjectService) {
+  void _openDayBookManager(
+    DateTime day,
+    TimetableService timetableService,
+    SubjectService subjectService,
+  ) {
     final lessons = timetableService.getLessonsForCalendarDate(day);
     final subjectIds = lessons.map((l) => l.subjectId).toSet().toList();
 
@@ -231,7 +252,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-          return Padding(
+        return Padding(
           padding: MediaQuery.of(context).viewInsets,
           child: Consumer<BookService>(
             builder: (context, bookService, child) {
@@ -244,11 +265,16 @@ class _TimetableScreenState extends State<TimetableScreen> {
               if (subjectIds.isEmpty) {
                 return SizedBox(
                   height: 200,
-                  child: Center(child: Text('No subjects with lessons on this day')),
+                  child: Center(
+                    child: Text('No subjects with lessons on this day'),
+                  ),
                 );
               }
 
-              final subjects = subjectIds.map((id) => subjectService.getSubjectById(id)).whereType<Subject>().toList();
+              final subjects = subjectIds
+                  .map((id) => subjectService.getSubjectById(id))
+                  .whereType<Subject>()
+                  .toList();
 
               return DraggableScrollableSheet(
                 expand: false,
@@ -272,15 +298,36 @@ class _TimetableScreenState extends State<TimetableScreen> {
                           children: [
                             Row(
                               children: [
-                                CircleAvatar(backgroundColor: subj.colorValue != null ? Color(subj.colorValue!) : AppColors.getDefaultSubjectColor(subj.id), child: Text(subj.name.isNotEmpty ? subj.name[0] : '?')),
+                                CircleAvatar(
+                                  backgroundColor: subj.colorValue != null
+                                      ? Color(subj.colorValue!)
+                                      : AppColors.getDefaultSubjectColor(
+                                          subj.id,
+                                        ),
+                                  child: Text(
+                                    subj.name.isNotEmpty ? subj.name[0] : '?',
+                                  ),
+                                ),
                                 const SizedBox(width: 12),
-                                Expanded(child: Text(subj.name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                                Expanded(
+                                  child: Text(
+                                    subj.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
                                 IconButton(
                                   icon: const Icon(Icons.qr_code_scanner),
                                   tooltip: 'Open scanner',
                                   onPressed: () async {
                                     // Push full scanner screen; it will update statuses itself
-                                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ScannerScreen()));
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const ScannerScreen(),
+                                      ),
+                                    );
                                   },
                                 ),
                               ],
@@ -288,69 +335,117 @@ class _TimetableScreenState extends State<TimetableScreen> {
                             const SizedBox(height: 8),
                             if (books.isEmpty)
                               Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
                                 child: Text('No books for this subject'),
                               )
-                            else ...books.map((b) {
-                              final status = bookService.getBookStatus(b.id);
-                              Color statusColor;
-                              String statusLabel;
-                              switch (status) {
-                                case 'missing':
-                                  statusColor = Colors.red.shade400;
-                                  statusLabel = 'Missing';
-                                  break;
-                                case 'handed_in':
-                                  statusColor = Colors.orange.shade700;
-                                  statusLabel = 'Handed in';
-                                  break;
-                                default:
-                                  statusColor = Colors.green.shade600;
-                                  statusLabel = 'Available';
-                              }
+                            else
+                              ...books.map((b) {
+                                final status = bookService.getBookStatus(b.id);
+                                Color statusColor;
+                                String statusLabel;
+                                switch (status) {
+                                  case 'missing':
+                                    statusColor = Colors.red.shade400;
+                                    statusLabel = 'Missing';
+                                    break;
+                                  case 'handed_in':
+                                    statusColor = Colors.orange.shade700;
+                                    statusLabel = 'Handed in';
+                                    break;
+                                  default:
+                                    statusColor = Colors.green.shade600;
+                                    statusLabel = 'Available';
+                                }
 
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: const Icon(Icons.qr_code),
-                                title: Text('Book ${b.id}'),
-                                subtitle: Text(subj.generateCode(b.id), style: const TextStyle(fontFamily: 'monospace')),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      margin: const EdgeInsets.only(right: 8),
-                                      decoration: BoxDecoration(
-                                        color: statusColor.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(color: statusColor.withOpacity(0.9)),
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(Icons.qr_code),
+                                  title: Text('Book ${b.id}'),
+                                  subtitle: Text(
+                                    subj.generateCode(b.id),
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        margin: const EdgeInsets.only(right: 8),
+                                        decoration: BoxDecoration(
+                                          color: statusColor.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                          border: Border.all(
+                                            color: statusColor.withOpacity(0.9),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          statusLabel,
+                                          style: TextStyle(
+                                            color: statusColor,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                      child: Text(statusLabel, style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.qr_code_2),
-                                      tooltip: 'View QR',
-                                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => QrCodeScreen(subject: subj, bookId: b.id))),
-                                    ),
-                                    PopupMenuButton<String>(
-                                      onSelected: (value) async {
-                                        if (value == 'missing') await bookService.markBookMissing(b.id);
-                                        if (value == 'handed_in') await bookService.markBookHandedIn(b.id);
-                                        if (value == 'available') await bookService.setBookStatus(b.id, 'available');
-                                        // Refresh UI
-                                        setState(() {});
-                                      },
-                                      itemBuilder: (_) => [
-                                        const PopupMenuItem(value: 'available', child: Text('Mark Available')),
-                                        const PopupMenuItem(value: 'missing', child: Text('Mark Missing')),
-                                        const PopupMenuItem(value: 'handed_in', child: Text('Mark Handed In')),
-                                      ],
-                                      icon: const Icon(Icons.more_vert),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                                      IconButton(
+                                        icon: const Icon(Icons.qr_code_2),
+                                        tooltip: 'View QR',
+                                        onPressed: () => Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => QrCodeScreen(
+                                              subject: subj,
+                                              bookId: b.id,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      PopupMenuButton<String>(
+                                        onSelected: (value) async {
+                                          if (value == 'missing')
+                                            await bookService.markBookMissing(
+                                              b.id,
+                                            );
+                                          if (value == 'handed_in')
+                                            await bookService.markBookHandedIn(
+                                              b.id,
+                                            );
+                                          if (value == 'available')
+                                            await bookService.setBookStatus(
+                                              b.id,
+                                              'available',
+                                            );
+                                          // Refresh UI
+                                          setState(() {});
+                                        },
+                                        itemBuilder: (_) => [
+                                          const PopupMenuItem(
+                                            value: 'available',
+                                            child: Text('Mark Available'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'missing',
+                                            child: Text('Mark Missing'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'handed_in',
+                                            child: Text('Mark Handed In'),
+                                          ),
+                                        ],
+                                        icon: const Icon(Icons.more_vert),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
                           ],
                         ),
                       ),
@@ -370,18 +465,11 @@ class _TimetableScreenState extends State<TimetableScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.event_available,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.event_available, size: 80, color: Colors.grey.shade400),
           const SizedBox(height: 16),
           Text(
             'No lessons on ${AppConstants.getDayName(dayOfWeek)}',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -409,16 +497,16 @@ class _TimetableScreenState extends State<TimetableScreen> {
   void _editLesson(Lesson lesson) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => LessonFormScreen(lesson: lesson),
-      ),
+      MaterialPageRoute(builder: (context) => LessonFormScreen(lesson: lesson)),
     );
   }
 
   void _showLessonDetails(Lesson lesson, Subject? subject) {
     final color = subject?.colorValue != null
         ? Color(subject!.colorValue!)
-        : (subject != null ? AppColors.getDefaultSubjectColor(subject.id) : Colors.grey);
+        : (subject != null
+              ? AppColors.getDefaultSubjectColor(subject.id)
+              : Colors.grey);
 
     showModalBottomSheet(
       context: context,
@@ -475,7 +563,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
             ),
             const SizedBox(height: 24),
             _buildDetailRow(Icons.calendar_today, lesson.dayName),
-            _buildDetailRow(Icons.timer, TimeUtils.formatDuration(lesson.durationMinutes)),
+            _buildDetailRow(
+              Icons.timer,
+              TimeUtils.formatDuration(lesson.durationMinutes),
+            ),
             _buildDetailRow(Icons.repeat, _getRecurrenceText(lesson)),
             if (lesson.weekNumber > 0)
               _buildDetailRow(Icons.view_week, 'Week ${lesson.weekNumber}'),
@@ -496,7 +587,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 TextButton.icon(
                   onPressed: () {
                     Navigator.pop(context);
-                    _confirmDeleteLesson(lesson, context.read<TimetableService>());
+                    _confirmDeleteLesson(
+                      lesson,
+                      context.read<TimetableService>(),
+                    );
                   },
                   icon: const Icon(Icons.delete),
                   label: const Text('Delete'),
@@ -549,9 +643,9 @@ class _TimetableScreenState extends State<TimetableScreen> {
             onPressed: () {
               timetableService.deleteLesson(lesson.id);
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lesson deleted')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Lesson deleted')));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
@@ -581,10 +675,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   DropdownButton<int>(
                     value: fromWeek,
                     items: [1, 2]
-                        .map((w) => DropdownMenuItem(
-                              value: w,
-                              child: Text('Week $w'),
-                            ))
+                        .map(
+                          (w) => DropdownMenuItem(
+                            value: w,
+                            child: Text('Week $w'),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => fromWeek = v!),
                   ),
@@ -596,10 +692,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   DropdownButton<int>(
                     value: toWeek,
                     items: [1, 2]
-                        .map((w) => DropdownMenuItem(
-                              value: w,
-                              child: Text('Week $w'),
-                            ))
+                        .map(
+                          (w) => DropdownMenuItem(
+                            value: w,
+                            child: Text('Week $w'),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => toWeek = v!),
                   ),
@@ -616,17 +714,23 @@ class _TimetableScreenState extends State<TimetableScreen> {
               onPressed: () {
                 if (fromWeek == toWeek) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select different weeks')),
+                    const SnackBar(
+                      content: Text('Please select different weeks'),
+                    ),
                   );
                   return;
                 }
                 context.read<TimetableService>().copyWeek(
-                      fromWeekNumber: fromWeek,
-                      toWeekNumber: toWeek,
-                    );
+                  fromWeekNumber: fromWeek,
+                  toWeekNumber: toWeek,
+                );
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Lessons copied from Week $fromWeek to Week $toWeek')),
+                  SnackBar(
+                    content: Text(
+                      'Lessons copied from Week $fromWeek to Week $toWeek',
+                    ),
+                  ),
                 );
               },
               child: const Text('Copy'),
@@ -640,7 +744,9 @@ class _TimetableScreenState extends State<TimetableScreen> {
   void _addSpecialLesson(DateTime forDate) {
     final timetableService = context.read<TimetableService>();
     final subjectService = context.read<SubjectService>();
-    int selectedSubjectId = subjectService.subjects.isNotEmpty ? subjectService.subjects.first.id : 0;
+    int selectedSubjectId = subjectService.subjects.isNotEmpty
+        ? subjectService.subjects.first.id
+        : 0;
     TimeOfDay start = const TimeOfDay(hour: 9, minute: 0);
     TimeOfDay end = const TimeOfDay(hour: 10, minute: 0);
 
@@ -655,16 +761,22 @@ class _TimetableScreenState extends State<TimetableScreen> {
               DropdownButton<int>(
                 value: selectedSubjectId,
                 items: subjectService.subjects
-                    .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                    .map(
+                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
+                    )
                     .toList(),
-                onChanged: (v) => setState(() => selectedSubjectId = v ?? selectedSubjectId),
+                onChanged: (v) =>
+                    setState(() => selectedSubjectId = v ?? selectedSubjectId),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   TextButton(
                     onPressed: () async {
-                      final t = await showTimePicker(context: context, initialTime: start);
+                      final t = await showTimePicker(
+                        context: context,
+                        initialTime: start,
+                      );
                       if (t != null) setState(() => start = t);
                     },
                     child: Text('Start: ${start.format(context)}'),
@@ -672,7 +784,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   const SizedBox(width: 8),
                   TextButton(
                     onPressed: () async {
-                      final t = await showTimePicker(context: context, initialTime: end);
+                      final t = await showTimePicker(
+                        context: context,
+                        initialTime: end,
+                      );
                       if (t != null) setState(() => end = t);
                     },
                     child: Text('End: ${end.format(context)}'),
@@ -682,7 +797,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
             TextButton(
               onPressed: () {
                 final id = DateTime.now().microsecondsSinceEpoch.toString();
@@ -727,7 +845,9 @@ class _LessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = subject?.colorValue != null
         ? Color(subject!.colorValue!)
-        : (subject != null ? AppColors.getDefaultSubjectColor(subject!.id) : Colors.grey);
+        : (subject != null
+              ? AppColors.getDefaultSubjectColor(subject!.id)
+              : Colors.grey);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -768,15 +888,13 @@ class _LessonCard extends StatelessWidget {
                     ),
                     Text(
                       lesson.formattedEndTime,
-                      style: TextStyle(
-                        color: color,
-                      ),
+                      style: TextStyle(color: color),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Subject color indicator
               Container(
                 width: 4,
@@ -787,7 +905,7 @@ class _LessonCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Subject info
               Expanded(
                 child: Column(
@@ -834,7 +952,7 @@ class _LessonCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               // Actions
               PopupMenuButton<String>(
                 onSelected: (value) {

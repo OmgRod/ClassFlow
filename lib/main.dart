@@ -8,10 +8,10 @@ import 'utils/constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize database
   await DatabaseService.initialize();
-  
+
   runApp(const DetentionSafeApp());
 }
 
@@ -29,7 +29,12 @@ class DetentionSafeApp extends StatelessWidget {
       child: ValueListenableBuilder(
         valueListenable: DatabaseService.settingsBox.listenable(),
         builder: (context, box, _) {
-          final modeStr = DatabaseService.settingsBox.get('themeMode', defaultValue: 'system') as String;
+          final modeStr =
+              DatabaseService.settingsBox.get(
+                    'themeMode',
+                    defaultValue: 'system',
+                  )
+                  as String;
           ThemeMode mode = ThemeMode.system;
           if (modeStr == 'light') mode = ThemeMode.light;
           if (modeStr == 'dark') mode = ThemeMode.dark;

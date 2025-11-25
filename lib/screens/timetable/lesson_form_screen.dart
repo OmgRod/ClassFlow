@@ -23,7 +23,7 @@ class LessonFormScreen extends StatefulWidget {
 
 class _LessonFormScreenState extends State<LessonFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late int _selectedSubjectId;
   late int _selectedDayOfWeek;
   late TimeOfDay _startTime;
@@ -32,7 +32,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
   late int _customInterval;
   late int _weekNumber;
   late TextEditingController _notesController;
-  
+
   LessonTemplate? _selectedTemplate;
   bool _isLoading = false;
 
@@ -41,12 +41,15 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
   @override
   void initState() {
     super.initState();
-    
+
     if (isEditing) {
       final lesson = widget.lesson!;
       _selectedSubjectId = lesson.subjectId;
       _selectedDayOfWeek = lesson.dayOfWeek;
-      _startTime = TimeOfDay(hour: lesson.startHour, minute: lesson.startMinute);
+      _startTime = TimeOfDay(
+        hour: lesson.startHour,
+        minute: lesson.startMinute,
+      );
       _endTime = TimeOfDay(hour: lesson.endHour, minute: lesson.endMinute);
       _recurrenceType = lesson.recurrenceType;
       _customInterval = lesson.customIntervalWeeks ?? 1;
@@ -106,10 +109,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'No subjects available',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 8),
                   const Text('Add subjects first before creating lessons'),
@@ -145,10 +145,14 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                         value: null,
                         child: Text('No template'),
                       ),
-                      ...templates.map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text('${t.name} (${t.formattedStartTime}-${t.formattedEndTime})'),
-                          )),
+                      ...templates.map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            '${t.name} (${t.formattedStartTime}-${t.formattedEndTime})',
+                          ),
+                        ),
+                      ),
                     ],
                     onChanged: (template) {
                       setState(() {
@@ -170,10 +174,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                 ],
 
                 // Subject selector
-                Text(
-                  'Subject',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('Subject', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   value: subjects.any((s) => s.id == _selectedSubjectId)
@@ -242,10 +243,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                 const SizedBox(height: 24),
 
                 // Time selectors
-                Text(
-                  'Time',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('Time', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -272,7 +270,10 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       'End time must be after start time',
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 const SizedBox(height: 24),
@@ -306,7 +307,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                     setState(() => _recurrenceType = selected.first);
                   },
                 ),
-                
+
                 if (_recurrenceType == RecurrenceType.custom) ...[
                   const SizedBox(height: 16),
                   Row(
@@ -319,7 +320,10 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
                           decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
                           ),
                           onChanged: (value) {
                             final interval = int.tryParse(value);
@@ -344,18 +348,9 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                   const SizedBox(height: 8),
                   SegmentedButton<int>(
                     segments: const [
-                      ButtonSegment(
-                        value: 0,
-                        label: Text('Every Week'),
-                      ),
-                      ButtonSegment(
-                        value: 1,
-                        label: Text('Week 1'),
-                      ),
-                      ButtonSegment(
-                        value: 2,
-                        label: Text('Week 2'),
-                      ),
+                      ButtonSegment(value: 0, label: Text('Every Week')),
+                      ButtonSegment(value: 1, label: Text('Week 1')),
+                      ButtonSegment(value: 2, label: Text('Week 2')),
                     ],
                     selected: {_weekNumber},
                     onSelectionChanged: (selected) {
@@ -470,7 +465,8 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
           final startMinutes = _startTime.hour * 60 + _startTime.minute;
           final endMinutes = _endTime.hour * 60 + _endTime.minute;
           if (endMinutes <= startMinutes) {
-            final newEndMinutes = startMinutes + AppConstants.defaultLessonDurationMinutes;
+            final newEndMinutes =
+                startMinutes + AppConstants.defaultLessonDurationMinutes;
             _endTime = TimeOfDay(
               hour: newEndMinutes ~/ 60,
               minute: newEndMinutes % 60,
@@ -485,7 +481,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
 
   bool _checkForConflicts(TimetableService timetableService) {
     if (_selectedSubjectId < 0) return false;
-    
+
     final tempLesson = Lesson(
       id: widget.lesson?.id ?? 'temp',
       subjectId: _selectedSubjectId,
@@ -496,7 +492,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
       endMinute: _endTime.minute,
       weekNumber: _weekNumber,
     );
-    
+
     return timetableService.hasConflicts(tempLesson);
   }
 
@@ -560,9 +556,9 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {
@@ -587,9 +583,9 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
               context.read<TimetableService>().deleteLesson(widget.lesson!.id);
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close form
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lesson deleted')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Lesson deleted')));
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),

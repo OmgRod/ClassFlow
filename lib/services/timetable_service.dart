@@ -97,16 +97,17 @@ class TimetableService extends ChangeNotifier {
   List<Lesson> getLessonsForDay(int dayOfWeek, {int? weekNumber}) {
     return _lessons.where((l) {
       if (l.dayOfWeek != dayOfWeek) return false;
-      if (weekNumber != null && l.weekNumber != 0 && l.weekNumber != weekNumber) {
+      if (weekNumber != null &&
+          l.weekNumber != 0 &&
+          l.weekNumber != weekNumber) {
         return false;
       }
       return true;
-    }).toList()
-      ..sort((a, b) {
-        final aMinutes = a.startHour * 60 + a.startMinute;
-        final bMinutes = b.startHour * 60 + b.startMinute;
-        return aMinutes.compareTo(bMinutes);
-      });
+    }).toList()..sort((a, b) {
+      final aMinutes = a.startHour * 60 + a.startMinute;
+      final bMinutes = b.startHour * 60 + b.startMinute;
+      return aMinutes.compareTo(bMinutes);
+    });
   }
 
   /// Get lessons for a specific calendar date (respects recurrence rules)
@@ -115,46 +116,57 @@ class TimetableService extends ChangeNotifier {
     bool invert = false;
     DateTime? globalBase;
     try {
-      invert = DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false) as bool;
+      invert =
+          DatabaseService.settingsBox.get(
+                'invertWeekParity',
+                defaultValue: false,
+              )
+              as bool;
       final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
       if (iso != null) globalBase = DateTime.tryParse(iso);
     } catch (_) {}
 
     // collect special lessons for the date (they override regular lessons)
     final specialForDate = DatabaseService.specialLessonsBox.values
-      .whereType<SpecialLesson>()
-      .where((s) => isSameDate(s.date, date))
-      .toList();
+        .whereType<SpecialLesson>()
+        .where((s) => isSameDate(s.date, date))
+        .toList();
 
     return _lessons.where((l) {
       // must match weekday
       if (l.dayOfWeek != date.weekday) return false;
 
       // respect explicit weekNumber filter (1 or 2). If lesson has a specific weekNumber, enforce it.
-      if (weekNumber != null && l.weekNumber != 0 && l.weekNumber != weekNumber) {
+      if (weekNumber != null &&
+          l.weekNumber != 0 &&
+          l.weekNumber != weekNumber) {
         return false;
       }
 
       // respect recurrence rules (occursOn handles everyWeek, everyTwoWeeks, custom)
-      if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase)) return false;
+      if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase))
+        return false;
 
       // if a special lesson explicitly overrides this lesson, exclude it
-      if (specialForDate.any((s) => s.originalLessonId != null && s.originalLessonId == l.id)) {
+      if (specialForDate.any(
+        (s) => s.originalLessonId != null && s.originalLessonId == l.id,
+      )) {
         return false;
       }
 
       // if a special lesson overlaps and targets same subject, treat it as overridden
-      if (specialForDate.any((s) => s.subjectId == l.subjectId && lessonsOverlapSpecial(l, s))) {
+      if (specialForDate.any(
+        (s) => s.subjectId == l.subjectId && lessonsOverlapSpecial(l, s),
+      )) {
         return false;
       }
 
       return true;
-    }).toList()
-      ..sort((a, b) {
-        final aMinutes = a.startHour * 60 + a.startMinute;
-        final bMinutes = b.startHour * 60 + b.startMinute;
-        return aMinutes.compareTo(bMinutes);
-      });
+    }).toList()..sort((a, b) {
+      final aMinutes = a.startHour * 60 + a.startMinute;
+      final bMinutes = b.startHour * 60 + b.startMinute;
+      return aMinutes.compareTo(bMinutes);
+    });
   }
 
   /// Get lessons for a specific date
@@ -163,12 +175,25 @@ class TimetableService extends ChangeNotifier {
     bool invert = false;
     DateTime? globalBase;
     try {
-      invert = DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false) as bool;
+      invert =
+          DatabaseService.settingsBox.get(
+                'invertWeekParity',
+                defaultValue: false,
+              )
+              as bool;
       final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
       if (iso != null) globalBase = DateTime.tryParse(iso);
     } catch (_) {}
 
-    return _lessons.where((l) => l.occursOn(date, invertWeekParity: invert, globalBase: globalBase)).toList()
+    return _lessons
+        .where(
+          (l) => l.occursOn(
+            date,
+            invertWeekParity: invert,
+            globalBase: globalBase,
+          ),
+        )
+        .toList()
       ..sort((a, b) {
         final aMinutes = a.startHour * 60 + a.startMinute;
         final bMinutes = b.startHour * 60 + b.startMinute;
@@ -180,7 +205,10 @@ class TimetableService extends ChangeNotifier {
   List<SpecialLesson> getSpecialLessonsForDate(DateTime date) {
     try {
       final box = DatabaseService.specialLessonsBox;
-      return box.values.whereType<SpecialLesson>().where((s) => isSameDate(s.date, date)).toList()
+      return box.values
+          .whereType<SpecialLesson>()
+          .where((s) => isSameDate(s.date, date))
+          .toList()
         ..sort((a, b) {
           final aMinutes = a.startHour * 60 + a.startMinute;
           final bMinutes = b.startHour * 60 + b.startMinute;
@@ -248,7 +276,9 @@ class TimetableService extends ChangeNotifier {
     required int fromWeekNumber,
     required int toWeekNumber,
   }) async {
-    final lessonsToC = _lessons.where((l) => l.weekNumber == fromWeekNumber).toList();
+    final lessonsToC = _lessons
+        .where((l) => l.weekNumber == fromWeekNumber)
+        .toList();
     for (final lesson in lessonsToC) {
       await addLesson(
         subjectId: lesson.subjectId,
