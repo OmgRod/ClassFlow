@@ -292,7 +292,7 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
         for (final bookId in _bookIds) {
           // Check if book already exists
           if (bookService.getBookById(bookId) == null) {
-            await bookService.addBook(subjectId: subject.id);
+            await bookService.addBook(subjectId: subject.id, bookId: bookId);
           }
         }
       }

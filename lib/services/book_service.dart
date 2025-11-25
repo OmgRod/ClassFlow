@@ -22,13 +22,14 @@ class BookService extends ChangeNotifier {
     return _books.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1;
   }
 
-  /// Add a new book
+  /// Add a new book with a specific ID
   Future<Book> addBook({
     required int subjectId,
+    int? bookId,
     String? description,
   }) async {
     final book = Book(
-      id: nextId,
+      id: bookId ?? nextId,
       subjectId: subjectId,
       description: description,
     );
