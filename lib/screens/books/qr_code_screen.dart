@@ -9,6 +9,7 @@ import 'dart:io';
 import '../../models/models.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
+import '../../services/database_service.dart';
 
 class QrCodeScreen extends StatefulWidget {
   final Subject subject;
@@ -252,10 +253,18 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         return;
       }
 
-      // Save to app documents directory
-      final directory = await getApplicationDocumentsDirectory();
+      // Save to configured export directory (or app documents directory)
+      String? custom = DatabaseService.settingsBox.get('exportPath') as String?;
+      Directory directory;
+      if (custom != null && custom.isNotEmpty) {
+        directory = Directory(custom);
+        if (!await directory.exists()) await directory.create(recursive: true);
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
       final fileName = 'qr_${code.replaceAll('-', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${directory.path}/$fileName');
+      final file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes);
 
       if (mounted) {

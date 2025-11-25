@@ -3,7 +3,7 @@ import '../utils/constants.dart';
 import 'subjects/subjects_screen.dart';
 import 'books/books_screen.dart';
 import 'timetable/timetable_screen.dart';
-import 'scanner/scanner_screen.dart';
+import 'settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,14 +19,12 @@ class _HomeScreenState extends State<HomeScreen> {
     TimetableScreen(),
     SubjectsScreen(),
     BooksScreen(),
-    ScannerScreen(),
   ];
 
   final List<String> _titles = const [
     'Timetable',
     'Subjects',
     'Books & QR',
-    'Scanner',
   ];
 
   @override
@@ -38,6 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showAboutDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            },
           ),
         ],
       ),
@@ -67,11 +71,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.book_outlined),
             selectedIcon: Icon(Icons.book),
             label: 'Books',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.qr_code_scanner_outlined),
-            selectedIcon: Icon(Icons.qr_code_scanner),
-            label: 'Scanner',
           ),
         ],
       ),

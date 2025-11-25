@@ -87,6 +87,7 @@ class _SubjectBooksCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bookService = context.watch<BookService>();
     final color = subject.colorValue != null
         ? Color(subject.colorValue!)
         : AppColors.getDefaultSubjectColor(subject.id);
@@ -154,6 +155,23 @@ class _SubjectBooksCard extends StatelessWidget {
           // Books list
           ...subject.bookIds.map((bookId) {
             final code = subject.generateCode(bookId);
+            final status = bookService.getBookStatus(bookId);
+            Color statusColor;
+            String statusLabel;
+            switch (status) {
+              case 'missing':
+                statusColor = Colors.red.shade400;
+                statusLabel = 'Missing';
+                break;
+              case 'handed_in':
+                statusColor = Colors.orange.shade700;
+                statusLabel = 'Handed in';
+                break;
+              default:
+                statusColor = Colors.green.shade600;
+                statusLabel = 'Available';
+            }
+
             return ListTile(
               leading: Container(
                 width: 40,
@@ -172,6 +190,19 @@ class _SubjectBooksCard extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: statusColor.withOpacity(0.9)),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.qr_code_2),
                     tooltip: 'View QR Code',

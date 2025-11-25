@@ -107,7 +107,7 @@ class Lesson extends HiveObject {
   }
 
   /// Check if this lesson occurs on a given date
-  bool occursOn(DateTime date) {
+  bool occursOn(DateTime date, {bool invertWeekParity = false, DateTime? globalBase}) {
     if (date.weekday != dayOfWeek) return false;
 
     if (startDate != null && date.isBefore(startDate!)) return false;
@@ -116,13 +116,23 @@ class Lesson extends HiveObject {
       case RecurrenceType.everyWeek:
         return true;
       case RecurrenceType.everyTwoWeeks:
-        if (startDate == null) return weekNumber == 0 || (getWeekNumber(date) % 2 == weekNumber % 2);
-        final weeksSince = date.difference(startDate!).inDays ~/ 7;
-        return weeksSince % 2 == 0;
+        // Determine base for parity: lesson.startDate takes precedence, otherwise use provided globalBase
+        final base = startDate ?? globalBase;
+        if (base == null) {
+          final parity = getWeekNumber(date) % 2;
+          final lessonParity = weekNumber % 2;
+          final matches = weekNumber == 0 || parity == lessonParity;
+          return invertWeekParity ? !matches : matches;
+        }
+        final weeksSince = date.difference(base).inDays ~/ 7;
+        final occurs = weeksSince % 2 == 0;
+        return invertWeekParity ? !occurs : occurs;
       case RecurrenceType.custom:
-        if (startDate == null || customIntervalWeeks == null) return true;
-        final weeksSince = date.difference(startDate!).inDays ~/ 7;
-        return weeksSince % customIntervalWeeks! == 0;
+        final base = startDate ?? globalBase;
+        if (base == null || customIntervalWeeks == null) return true;
+        final weeksSinceCustom = date.difference(base).inDays ~/ 7;
+        final occursCustom = weeksSinceCustom % customIntervalWeeks! == 0;
+        return invertWeekParity ? !occursCustom : occursCustom;
     }
   }
 

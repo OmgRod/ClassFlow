@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+// Hive import not needed here; use DatabaseService.specialLessonsBox
 import '../models/models.dart';
 import 'database_service.dart';
 
@@ -13,6 +14,19 @@ class TimetableService extends ChangeNotifier {
 
   TimetableService() {
     _loadData();
+  }
+
+  bool isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool lessonsOverlapSpecial(Lesson l, SpecialLesson s) {
+    if (l.dayOfWeek != s.date.weekday) return false;
+    final lStart = l.startHour * 60 + l.startMinute;
+    final lEnd = l.endHour * 60 + l.endMinute;
+    final sStart = s.startHour * 60 + s.startMinute;
+    final sEnd = s.endHour * 60 + s.endMinute;
+    return lStart < sEnd && lEnd > sStart;
   }
 
   void _loadData() {
@@ -95,14 +109,121 @@ class TimetableService extends ChangeNotifier {
       });
   }
 
-  /// Get lessons for a specific date
-  List<Lesson> getLessonsForDate(DateTime date) {
-    return _lessons.where((l) => l.occursOn(date)).toList()
+  /// Get lessons for a specific calendar date (respects recurrence rules)
+  List<Lesson> getLessonsForCalendarDate(DateTime date, {int? weekNumber}) {
+    // Read global invert setting and global week1 base from settings box if available
+    bool invert = false;
+    DateTime? globalBase;
+    try {
+      invert = DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false) as bool;
+      final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
+      if (iso != null) globalBase = DateTime.tryParse(iso);
+    } catch (_) {}
+
+    // collect special lessons for the date (they override regular lessons)
+    final specialForDate = DatabaseService.specialLessonsBox.values
+      .whereType<SpecialLesson>()
+      .where((s) => isSameDate(s.date, date))
+      .toList();
+
+    return _lessons.where((l) {
+      // must match weekday
+      if (l.dayOfWeek != date.weekday) return false;
+
+      // respect explicit weekNumber filter (1 or 2). If lesson has a specific weekNumber, enforce it.
+      if (weekNumber != null && l.weekNumber != 0 && l.weekNumber != weekNumber) {
+        return false;
+      }
+
+      // respect recurrence rules (occursOn handles everyWeek, everyTwoWeeks, custom)
+      if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase)) return false;
+
+      // if a special lesson explicitly overrides this lesson, exclude it
+      if (specialForDate.any((s) => s.originalLessonId != null && s.originalLessonId == l.id)) {
+        return false;
+      }
+
+      // if a special lesson overlaps and targets same subject, treat it as overridden
+      if (specialForDate.any((s) => s.subjectId == l.subjectId && lessonsOverlapSpecial(l, s))) {
+        return false;
+      }
+
+      return true;
+    }).toList()
       ..sort((a, b) {
         final aMinutes = a.startHour * 60 + a.startMinute;
         final bMinutes = b.startHour * 60 + b.startMinute;
         return aMinutes.compareTo(bMinutes);
       });
+  }
+
+  /// Get lessons for a specific date
+  List<Lesson> getLessonsForDate(DateTime date) {
+    // Use global settings for invert and globalBase if available
+    bool invert = false;
+    DateTime? globalBase;
+    try {
+      invert = DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false) as bool;
+      final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
+      if (iso != null) globalBase = DateTime.tryParse(iso);
+    } catch (_) {}
+
+    return _lessons.where((l) => l.occursOn(date, invertWeekParity: invert, globalBase: globalBase)).toList()
+      ..sort((a, b) {
+        final aMinutes = a.startHour * 60 + a.startMinute;
+        final bMinutes = b.startHour * 60 + b.startMinute;
+        return aMinutes.compareTo(bMinutes);
+      });
+  }
+
+  /// Get special lessons for a specific date
+  List<SpecialLesson> getSpecialLessonsForDate(DateTime date) {
+    try {
+      final box = DatabaseService.specialLessonsBox;
+      return box.values.whereType<SpecialLesson>().where((s) => isSameDate(s.date, date)).toList()
+        ..sort((a, b) {
+          final aMinutes = a.startHour * 60 + a.startMinute;
+          final bMinutes = b.startHour * 60 + b.startMinute;
+          return aMinutes.compareTo(bMinutes);
+        });
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Add a special lesson for a specific date
+  Future<SpecialLesson> addSpecialLesson({
+    required String id,
+    required DateTime date,
+    required int subjectId,
+    required int startHour,
+    required int startMinute,
+    required int endHour,
+    required int endMinute,
+    String? originalLessonId,
+    String? notes,
+  }) async {
+    final box = DatabaseService.specialLessonsBox;
+    final special = SpecialLesson(
+      id: id,
+      date: date,
+      subjectId: subjectId,
+      startHour: startHour,
+      startMinute: startMinute,
+      endHour: endHour,
+      endMinute: endMinute,
+      originalLessonId: originalLessonId,
+      notes: notes,
+    );
+    await box.put(special.id, special);
+    _loadData();
+    return special;
+  }
+
+  Future<void> deleteSpecialLesson(String id) async {
+    final box = DatabaseService.specialLessonsBox;
+    await box.delete(id);
+    _loadData();
   }
 
   /// Get all lessons for a subject

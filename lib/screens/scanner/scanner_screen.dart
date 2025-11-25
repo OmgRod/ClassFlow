@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
@@ -20,6 +21,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
   int? _scannedBookId;
   bool _hasError = false;
   String? _errorMessage;
+  // Manual fallback selection
+  bool _manualMode = false;
+  int? _manualSelectedBookId;
 
   @override
   void initState() {
@@ -43,8 +47,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Scanner'),
+        leading: BackButton(onPressed: () => Navigator.of(context).maybePop()),
+      ),
+      body: Column(
+        children: [
         // Scanner view
         Expanded(
           flex: 3,
@@ -153,6 +162,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -181,11 +191,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () {
-                _controller?.dispose();
-                _initController();
-                setState(() {});
-              },
+              onPressed: () => _requestCameraPermission(),
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),
@@ -263,19 +269,147 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _buildResultPanel() {
+    Widget main;
     if (_lastScannedCode == null) {
-      return _buildEmptyState();
+      main = _buildEmptyState();
+    } else if (_hasError) {
+      main = _buildErrorState();
+    } else if (_scannedSubject != null) {
+      main = _buildSuccessState();
+    } else {
+      main = _buildEmptyState();
     }
 
-    if (_hasError) {
-      return _buildErrorState();
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          main,
+          const SizedBox(height: 12),
+          _buildManualFallback(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManualFallback() {
+    final bookService = context.watch<BookService>();
+    final subjectService = context.watch<SubjectService>();
+    // Ensure book & subject lists are fresh
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      bookService.refresh();
+      subjectService.refresh();
+    });
+    final books = bookService.books;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.handshake, color: Colors.blue),
+                const SizedBox(width: 8),
+                const Expanded(child: Text('Manual fallback & reports')),
+                TextButton(
+                  onPressed: () => setState(() => _manualMode = !_manualMode),
+                  child: Text(_manualMode ? 'Hide' : 'Manual Select'),
+                ),
+              ],
+            ),
+            if (_manualMode) ...[
+              const SizedBox(height: 8),
+              DropdownButton<int>(
+                isExpanded: true,
+                hint: const Text('Select book'),
+                value: _manualSelectedBookId,
+                items: books.map((b) {
+                  final subj = subjectService.getSubjectById(b.subjectId);
+                  final label = subj != null ? '${subj.name} - ${b.id}' : 'Book ${b.id}';
+                  return DropdownMenuItem<int>(value: b.id, child: Text(label));
+                }).toList(),
+                onChanged: (v) => setState(() => _manualSelectedBookId = v),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _manualSelectedBookId == null ? null : _confirmManualSelection,
+                      child: const Text('Use Selected Book'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: ((_manualSelectedBookId ?? _scannedBookId) == null)
+                        ? null
+                        : () => _reportBookStatus('teacher', bookId: _manualSelectedBookId),
+                    child: const Text('My teacher has my book'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: ((_manualSelectedBookId ?? _scannedBookId) == null)
+                        ? null
+                        : () => _reportBookStatus('missing', bookId: _manualSelectedBookId),
+                    child: const Text("I can't find my book"),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmManualSelection() {
+    final bookService = context.read<BookService>();
+    final subjectService = context.read<SubjectService>();
+    final book = bookService.getBookById(_manualSelectedBookId!);
+    if (book == null) return;
+    final subj = subjectService.getSubjectById(book.subjectId);
+    setState(() {
+      _scannedBookId = book.id;
+      _scannedSubject = subj;
+      _lastScannedCode = book.generateQrCode(subj?.name ?? '');
+      _hasError = false;
+      _errorMessage = null;
+    });
+  }
+
+  Future<void> _reportBookStatus(String type, {int? bookId}) async {
+    // Instead of creating a report, simply mark the book status so it appears
+    // in the Books menu as missing or handed in.
+    final bookService = context.read<BookService>();
+    final idToUse = bookId ?? _scannedBookId;
+    if (idToUse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No book selected')));
+      return;
     }
 
-    if (_scannedSubject != null) {
-      return _buildSuccessState();
+    if (type == 'teacher') {
+      await bookService.markBookHandedIn(idToUse);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as handed in')));
+    } else {
+      await bookService.markBookMissing(idToUse);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as missing')));
     }
 
-    return _buildEmptyState();
+    // Refresh local state and services
+    setState(() {
+      _scannedBookId = idToUse;
+    });
+    bookService.refresh();
   }
 
   Widget _buildEmptyState() {
@@ -544,6 +678,47 @@ class _ScannerScreenState extends State<ScannerScreen> {
       _hasError = false;
       _errorMessage = null;
     });
+  }
+
+  Future<void> _requestCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) {
+      _controller?.dispose();
+      _initController();
+      setState(() {
+        _hasError = false;
+        _errorMessage = null;
+      });
+    } else if (status.isPermanentlyDenied) {
+      // Guide user to settings
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Camera Permission'),
+          content: const Text('Camera permission is permanently denied. Please enable it in app settings.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                openAppSettings();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Show a simple message
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Camera Permission'),
+          content: const Text('Camera permission was denied. The scanner cannot run without access.'),
+          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK'))],
+        ),
+      );
+    }
   }
 }
 

@@ -335,33 +335,35 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                 ],
                 const SizedBox(height: 24),
 
-                // Week number (for bi-weekly timetables)
-                Text(
-                  'Week Number',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(
-                      value: 0,
-                      label: Text('Every Week'),
-                    ),
-                    ButtonSegment(
-                      value: 1,
-                      label: Text('Week 1'),
-                    ),
-                    ButtonSegment(
-                      value: 2,
-                      label: Text('Week 2'),
-                    ),
-                  ],
-                  selected: {_weekNumber},
-                  onSelectionChanged: (selected) {
-                    setState(() => _weekNumber = selected.first);
-                  },
-                ),
-                const SizedBox(height: 24),
+                // Week number (show only when bi-weekly selected)
+                if (_recurrenceType == RecurrenceType.everyTwoWeeks) ...[
+                  Text(
+                    'Week Number',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(
+                        value: 0,
+                        label: Text('Every Week'),
+                      ),
+                      ButtonSegment(
+                        value: 1,
+                        label: Text('Week 1'),
+                      ),
+                      ButtonSegment(
+                        value: 2,
+                        label: Text('Week 2'),
+                      ),
+                    ],
+                    selected: {_weekNumber},
+                    onSelectionChanged: (selected) {
+                      setState(() => _weekNumber = selected.first);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 // Notes
                 Text(
