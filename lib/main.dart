@@ -47,11 +47,13 @@ class ItemListScreen extends StatefulWidget {
 
 class _ItemListScreenState extends State<ItemListScreen> {
   final List<TrackedItem> _items = [];
+  int _itemCounter = 0;
 
   void _addItem(String name, String location) {
     setState(() {
+      _itemCounter++;
       _items.add(TrackedItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: '${DateTime.now().millisecondsSinceEpoch}_$_itemCounter',
         name: name,
         location: location,
         dateAdded: DateTime.now(),
@@ -104,14 +106,21 @@ class _ItemListScreenState extends State<ItemListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              nameController.dispose();
+              locationController.dispose();
+              Navigator.pop(context);
+            },
             child: const Text('Cancel'),
           ),
           FilledButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty &&
-                  locationController.text.isNotEmpty) {
-                _addItem(nameController.text, locationController.text);
+              final name = nameController.text.trim();
+              final location = locationController.text.trim();
+              if (name.isNotEmpty && location.isNotEmpty) {
+                _addItem(name, location);
+                nameController.dispose();
+                locationController.dispose();
                 Navigator.pop(context);
               }
             },
