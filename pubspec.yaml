@@ -39,6 +39,10 @@ dependencies:
   
   # UUID for unique IDs
   uuid: ^4.2.1
+  # PDF generation and printing
+  pdf: ^3.10.1
+  printing: ^5.10.1
+  barcode: ^2.1.0
 
 dev_dependencies:
   flutter_test:

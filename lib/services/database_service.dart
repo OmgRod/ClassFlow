@@ -1,4 +1,5 @@
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 
 class DatabaseService {
@@ -17,24 +18,46 @@ class DatabaseService {
 
   /// Initialize Hive and register adapters
   static Future<void> initialize() async {
-    await Hive.initFlutter();
+    try {
+      await Hive.initFlutter();
 
-    // Register adapters
-    Hive.registerAdapter(SubjectAdapter());
-    Hive.registerAdapter(BookAdapter());
-    Hive.registerAdapter(LessonAdapter());
-    Hive.registerAdapter(RecurrenceTypeAdapter());
-    Hive.registerAdapter(LessonTemplateAdapter());
-    Hive.registerAdapter(SpecialLessonAdapter());
+      // Register adapters
+      Hive.registerAdapter(SubjectAdapter());
+      Hive.registerAdapter(BookAdapter());
+      Hive.registerAdapter(LessonAdapter());
+      Hive.registerAdapter(RecurrenceTypeAdapter());
+      Hive.registerAdapter(LessonTemplateAdapter());
+      Hive.registerAdapter(SpecialLessonAdapter());
 
-    // Open boxes
-    subjectsBox = await Hive.openBox<Subject>(subjectsBoxName);
-    booksBox = await Hive.openBox<Book>(booksBoxName);
-    lessonsBox = await Hive.openBox<Lesson>(lessonsBoxName);
-    templatesBox = await Hive.openBox<LessonTemplate>(templatesBoxName);
-    settingsBox = await Hive.openBox(settingsBoxName);
-    // special lessons
-    specialLessonsBox = await Hive.openBox<SpecialLesson>('special_lessons');
+      // Open boxes
+      subjectsBox = await Hive.openBox<Subject>(subjectsBoxName);
+      debugPrint(
+        'DatabaseService: opened subjectsBox (${subjectsBox.length} items)',
+      );
+      booksBox = await Hive.openBox<Book>(booksBoxName);
+      debugPrint('DatabaseService: opened booksBox (${booksBox.length} items)');
+      lessonsBox = await Hive.openBox<Lesson>(lessonsBoxName);
+      debugPrint(
+        'DatabaseService: opened lessonsBox (${lessonsBox.length} items)',
+      );
+      templatesBox = await Hive.openBox<LessonTemplate>(templatesBoxName);
+      debugPrint(
+        'DatabaseService: opened templatesBox (${templatesBox.length} items)',
+      );
+      settingsBox = await Hive.openBox(settingsBoxName);
+      debugPrint(
+        'DatabaseService: opened settingsBox (${settingsBox.keys.length} keys)',
+      );
+      // special lessons
+      specialLessonsBox = await Hive.openBox<SpecialLesson>('special_lessons');
+      debugPrint(
+        'DatabaseService: opened specialLessonsBox (${specialLessonsBox.length} items)',
+      );
+    } catch (e, st) {
+      // Surface initialization errors clearly to logs
+      debugPrint('DatabaseService.initialize() failed: $e\n$st');
+      rethrow;
+    }
   }
 
   /// Close all boxes

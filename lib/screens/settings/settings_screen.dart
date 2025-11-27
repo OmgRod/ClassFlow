@@ -5,6 +5,9 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:flutter/services.dart';
+import 'dart:typed_data';
+import 'dart:convert';
 // share_plus not used for direct save; keep dependency available if sharing later
 
 import 'package:provider/provider.dart';
@@ -31,6 +34,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadSettings();
   }
+
+  static const MethodChannel _channel = MethodChannel('detention_safe');
 
   void _loadSettings() {
     invertWeekParity =
@@ -79,6 +84,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           r'C:\Users\you\Downloads or /storage/emulated/0/Download',
                     ),
                   ),
+                const SizedBox(height: 8),
+                if (Platform.isAndroid)
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.folder_open),
+                    label: const Text('Choose folder (Android SAF)'),
+                    onPressed: () async {
+                      try {
+                        final uri = await _channel.invokeMethod<String>(
+                          'pickDirectory',
+                        );
+                        if (uri != null) {
+                          // Store the SAF tree URI as exportPath
+                          controller.text = uri;
+                          setStateDialog(() => mode = 'custom');
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('No folder selected')),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Folder picker failed: $e')),
+                        );
+                      }
+                    },
+                  ),
               ],
             ),
             actions: [
@@ -104,6 +135,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
 
                   try {
+                    // If the path looks like a SAF tree URI (content://), store it directly
+                    if (path.startsWith('content://')) {
+                      DatabaseService.settingsBox.put('exportPath', path);
+                      setState(() => exportPath = path);
+                      Navigator.of(ctx).pop(true);
+                      return;
+                    }
+
                     final dir = Directory(path);
                     if (!await dir.exists()) {
                       await dir.create(recursive: true);
@@ -327,28 +366,182 @@ class _SettingsScreenState extends State<SettingsScreen> {
         dir = Directory(custom);
         if (!await dir.exists()) await dir.create(recursive: true);
       } else {
-        dir = await getApplicationDocumentsDirectory();
+        // If no custom path is set, let Android users choose where to save (SAF) or use Downloads.
+        try {
+          if (Platform.isAndroid) {
+            // Ask the user whether they want to choose a folder or save to Downloads
+            final choice = await showDialog<String?>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Export Destination'),
+                content: const Text(
+                  'Where would you like to save the export file?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop('downloads'),
+                    child: const Text('Downloads (recommended)'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop('choose'),
+                    child: const Text('Choose folder'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: const Text('Cancel'),
+                  ),
+                ],
+              ),
+            );
+
+            if (choice == 'choose') {
+              try {
+                final uri = await _channel.invokeMethod<String>(
+                  'pickDirectory',
+                );
+                if (uri != null && uri.isNotEmpty) {
+                  // store the SAF tree URI for future exports and use it for this export
+                  DatabaseService.settingsBox.put('exportPath', uri);
+                  custom = uri;
+                  // use app documents as a local fallback path variable (we won't write to it when custom is a SAF URI)
+                  dir = await getApplicationDocumentsDirectory();
+                } else {
+                  // user cancelled picker, fall back to Downloads
+                  final dirs = await getExternalStorageDirectories(
+                    type: StorageDirectory.downloads,
+                  );
+                  if (dirs != null && dirs.isNotEmpty) {
+                    dir = dirs.first;
+                  } else {
+                    dir = await getApplicationDocumentsDirectory();
+                  }
+                }
+              } catch (e) {
+                // If SAF picker fails, fallback to Downloads
+                final dirs = await getExternalStorageDirectories(
+                  type: StorageDirectory.downloads,
+                );
+                if (dirs != null && dirs.isNotEmpty) {
+                  dir = dirs.first;
+                } else {
+                  dir = await getApplicationDocumentsDirectory();
+                }
+              }
+            } else if (choice == 'downloads') {
+              final dirs = await getExternalStorageDirectories(
+                type: StorageDirectory.downloads,
+              );
+              if (dirs != null && dirs.isNotEmpty) {
+                dir = dirs.first;
+              } else {
+                dir = await getApplicationDocumentsDirectory();
+              }
+            } else {
+              // cancelled - use app documents
+              dir = await getApplicationDocumentsDirectory();
+            }
+          } else {
+            dir = await getApplicationDocumentsDirectory();
+          }
+          if (!await dir.exists()) await dir.create(recursive: true);
+        } catch (e) {
+          // Fallback to app documents if external access fails
+          dir = await getApplicationDocumentsDirectory();
+          if (!await dir.exists()) await dir.create(recursive: true);
+        }
       }
 
       final fileName =
           'detention_safe_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
-      final file = File('${dir.path}${Platform.pathSeparator}$fileName');
-      await file.writeAsString(jsonStr);
+      // If custom path is a SAF tree URI (content://...), try saving via platform channel
+      try {
+        if (custom != null && custom.startsWith('content://')) {
+          final bytes = Uint8List.fromList(utf8.encode(jsonStr));
+          final ok = await _channel.invokeMethod<bool>('saveFileToUri', {
+            'treeUri': custom,
+            'filename': fileName,
+            'bytes': bytes,
+          });
+          if (ok == true) {
+            await showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Export Saved'),
+                content: const Text(
+                  'Export saved to selected folder (via SAF).',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+        }
 
-      // Saved to file; inform the user of location
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Export Saved'),
-          content: Text('Export saved to:\n${file.path}'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
+        // Otherwise try MediaStore Downloads first (better visibility on many Android devices)
+        if (Platform.isAndroid) {
+          final bytes = Uint8List.fromList(utf8.encode(jsonStr));
+          final ok = await _channel.invokeMethod<bool>('saveBytesToDownloads', {
+            'filename': fileName,
+            'mime': 'application/json',
+            'bytes': bytes,
+          });
+          if (ok == true) {
+            await showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Export Saved'),
+                content: Text('Export saved to Downloads as $fileName'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+        }
+
+        // Fallback: write to chosen directory or app documents
+        final file = File('${dir.path}${Platform.pathSeparator}$fileName');
+        await file.writeAsString(jsonStr);
+
+        // Saved to file; inform the user of location
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Export Saved'),
+            content: Text('Export saved to:\n${file.path}'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        // If platform channel failed or MediaStore failed, show a robust error message
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Export Failed'),
+            content: Text('Failed to save export: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
       showDialog(
         context: context,
@@ -758,159 +951,164 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SwitchListTile(
-              value: invertWeekParity,
-              onChanged: _toggleInvert,
-              title: const Text('Invert Week 1 / Week 2'),
-              subtitle: const Text(
-                'Flip the parity used for bi-weekly lessons',
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: const Text('Reference Week 1 Date'),
-              subtitle: Text(
-                week1StartDate != null
-                    ? DateFormat.yMMMMd().format(week1StartDate!)
-                    : 'Not set',
-              ),
-              trailing: TextButton(
-                onPressed: _pickWeek1Date,
-                child: const Text('Set Date'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              title: const Text('Theme'),
-              subtitle: Text(
-                themeMode[0].toUpperCase() + themeMode.substring(1),
-              ),
-              trailing: DropdownButton<String>(
-                value: themeMode,
-                items: const [
-                  DropdownMenuItem(value: 'system', child: Text('System')),
-                  DropdownMenuItem(value: 'light', child: Text('Light')),
-                  DropdownMenuItem(value: 'dark', child: Text('Dark')),
-                ],
-                onChanged: (v) => _setThemeMode(v ?? 'system'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _exportData,
-                    icon: const Icon(Icons.upload_file),
-                    label: const Text('Export Data'),
-                  ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SwitchListTile(
+                value: invertWeekParity,
+                onChanged: _toggleInvert,
+                title: const Text('Invert Week 1 / Week 2'),
+                subtitle: const Text(
+                  'Flip the parity used for bi-weekly lessons',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _importData,
-                    icon: const Icon(Icons.download_rounded),
-                    label: const Text('Import Data'),
-                  ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('Reference Week 1 Date'),
+                subtitle: Text(
+                  week1StartDate != null
+                      ? DateFormat.yMMMMd().format(week1StartDate!)
+                      : 'Not set',
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              title: const Text('Export Folder'),
-              subtitle: Text(
-                exportPath == null || exportPath!.isEmpty
-                    ? 'App documents folder (default)'
-                    : exportPath!,
+                trailing: TextButton(
+                  onPressed: _pickWeek1Date,
+                  child: const Text('Set Date'),
+                ),
               ),
-              trailing: TextButton(
-                onPressed: _changeExportPath,
-                child: const Text('Change'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _resetWeek1Reference,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reset Week1 Reference'),
-            ),
-            const SizedBox(height: 8),
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Fixes',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text('Run automated repairs for common data issues.'),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _repairMappings,
-                      icon: const Icon(Icons.sync_alt),
-                      label: const Text('Repair Subject ↔ Book mappings'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: _repairStatuses,
-                      icon: const Icon(Icons.report_problem),
-                      label: const Text('Repair Book Statuses'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final bookService = context.read<BookService>();
-                        await _showProgressDialog(
-                          'Recreating missing book records...',
-                        );
-                        final created = await bookService
-                            .recreateMissingBooksFromSubjects();
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Recreated $created missing book records',
-                            ),
-                          ),
-                        );
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.restore_page),
-                      label: const Text('Recreate missing Book records'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: _resetExportPathQuick,
-                      icon: const Icon(Icons.folder_open),
-                      label: const Text('Reset Export Path to default'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton.icon(
-                      onPressed: _runAllFixes,
-                      icon: const Icon(Icons.build),
-                      label: const Text('Run All Fixes'),
-                    ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Theme'),
+                subtitle: Text(
+                  themeMode[0].toUpperCase() + themeMode.substring(1),
+                ),
+                trailing: DropdownButton<String>(
+                  value: themeMode,
+                  items: const [
+                    DropdownMenuItem(value: 'system', child: Text('System')),
+                    DropdownMenuItem(value: 'light', child: Text('Light')),
+                    DropdownMenuItem(value: 'dark', child: Text('Dark')),
                   ],
+                  onChanged: (v) => _setThemeMode(v ?? 'system'),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Notes: If a lesson has its own start date that will be used before this global setting.',
-            ),
-          ],
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _exportData,
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Export Data'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _importData,
+                      icon: const Icon(Icons.download_rounded),
+                      label: const Text('Import Data'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                title: const Text('Export Folder'),
+                subtitle: Text(
+                  exportPath == null || exportPath!.isEmpty
+                      ? 'App documents folder (default)'
+                      : exportPath!,
+                ),
+                trailing: TextButton(
+                  onPressed: _changeExportPath,
+                  child: const Text('Change'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: _resetWeek1Reference,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reset Week1 Reference'),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fixes',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Run automated repairs for common data issues.',
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton.icon(
+                        onPressed: _repairMappings,
+                        icon: const Icon(Icons.sync_alt),
+                        label: const Text('Repair Subject ↔ Book mappings'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _repairStatuses,
+                        icon: const Icon(Icons.report_problem),
+                        label: const Text('Repair Book Statuses'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final bookService = context.read<BookService>();
+                          await _showProgressDialog(
+                            'Recreating missing book records...',
+                          );
+                          final created = await bookService
+                              .recreateMissingBooksFromSubjects();
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Recreated $created missing book records',
+                              ),
+                            ),
+                          );
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.restore_page),
+                        label: const Text('Recreate missing Book records'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _resetExportPathQuick,
+                        icon: const Icon(Icons.folder_open),
+                        label: const Text('Reset Export Path to default'),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton.icon(
+                        onPressed: _runAllFixes,
+                        icon: const Icon(Icons.build),
+                        label: const Text('Run All Fixes'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Notes: If a lesson has its own start date that will be used before this global setting.',
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
