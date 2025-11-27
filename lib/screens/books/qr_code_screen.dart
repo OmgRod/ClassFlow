@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../../models/models.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
+import '../../utils/file_utils.dart';
 import '../../services/database_service.dart';
 
 class QrCodeScreen extends StatefulWidget {
@@ -251,14 +251,14 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         return;
       }
 
-      // Save to configured export directory (or app documents directory)
+      // Save to configured export directory (or app's QR codes directory)
       String? custom = DatabaseService.settingsBox.get('exportPath') as String?;
       Directory directory;
       if (custom != null && custom.isNotEmpty) {
         directory = Directory(custom);
         if (!await directory.exists()) await directory.create(recursive: true);
       } else {
-        directory = await getApplicationDocumentsDirectory();
+        directory = await FileUtils.getQrCodesDirectory();
       }
 
       final fileName =
@@ -304,10 +304,10 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         return;
       }
 
-      // Save temporarily for sharing
-      final directory = await getTemporaryDirectory();
+      // Save temporarily for sharing in app's temp directory
+      final directory = await FileUtils.getTempDirectory();
       final fileName = 'qr_$code.png';
-      final file = File('${directory.path}/$fileName');
+      final file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes);
 
       await _shareFile(file.path);

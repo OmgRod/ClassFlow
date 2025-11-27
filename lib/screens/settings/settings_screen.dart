@@ -3,11 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
-import 'dart:convert';
 // share_plus not used for direct save; keep dependency available if sharing later
 
 import 'package:provider/provider.dart';
@@ -15,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../services/book_service.dart';
 import '../../models/models.dart';
+import '../../utils/file_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -403,50 +402,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // store the SAF tree URI for future exports and use it for this export
                   DatabaseService.settingsBox.put('exportPath', uri);
                   custom = uri;
-                  // use app documents as a local fallback path variable (we won't write to it when custom is a SAF URI)
-                  dir = await getApplicationDocumentsDirectory();
+                  // use app exports directory as a local fallback path variable (we won't write to it when custom is a SAF URI)
+                  dir = await FileUtils.getExportsDirectory();
                 } else {
-                  // user cancelled picker, fall back to Downloads
-                  final dirs = await getExternalStorageDirectories(
-                    type: StorageDirectory.downloads,
-                  );
-                  if (dirs != null && dirs.isNotEmpty) {
-                    dir = dirs.first;
-                  } else {
-                    dir = await getApplicationDocumentsDirectory();
-                  }
+                  // user cancelled picker, fall back to app exports directory
+                  dir = await FileUtils.getExportsDirectory();
                 }
               } catch (e) {
-                // If SAF picker fails, fallback to Downloads
-                final dirs = await getExternalStorageDirectories(
-                  type: StorageDirectory.downloads,
-                );
-                if (dirs != null && dirs.isNotEmpty) {
-                  dir = dirs.first;
-                } else {
-                  dir = await getApplicationDocumentsDirectory();
-                }
+                // If SAF picker fails, fallback to app exports directory
+                dir = await FileUtils.getExportsDirectory();
               }
             } else if (choice == 'downloads') {
-              final dirs = await getExternalStorageDirectories(
-                type: StorageDirectory.downloads,
-              );
-              if (dirs != null && dirs.isNotEmpty) {
-                dir = dirs.first;
-              } else {
-                dir = await getApplicationDocumentsDirectory();
-              }
+              // For downloads choice, use the app exports directory instead
+              dir = await FileUtils.getExportsDirectory();
             } else {
-              // cancelled - use app documents
-              dir = await getApplicationDocumentsDirectory();
+              // cancelled - use app exports directory
+              dir = await FileUtils.getExportsDirectory();
             }
           } else {
-            dir = await getApplicationDocumentsDirectory();
+            dir = await FileUtils.getExportsDirectory();
           }
           if (!await dir.exists()) await dir.create(recursive: true);
         } catch (e) {
-          // Fallback to app documents if external access fails
-          dir = await getApplicationDocumentsDirectory();
+          // Fallback to app exports directory if external access fails
+          dir = await FileUtils.getExportsDirectory();
           if (!await dir.exists()) await dir.create(recursive: true);
         }
       }
@@ -574,12 +553,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
     } catch (e) {
-      // If the file selector fails or is unavailable on a platform, fall back to documents-folder listing below.
+      // If the file selector fails or is unavailable on a platform, fall back to exports-folder listing below.
       debugPrint('file_selector not available or failed: $e');
     }
 
-    // Look for exported JSON files in the app documents directory
-    final dir = await getApplicationDocumentsDirectory();
+    // Look for exported JSON files in the app exports directory
+    final dir = await FileUtils.getExportsDirectory();
     final files = Directory(dir.path)
         .listSync()
         .whereType<File>()
@@ -592,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (_) => AlertDialog(
           title: const Text('No import files found'),
           content: Text(
-            'No JSON files were found in the app documents folder:\n${dir.path}\n\nPlease place your export JSON file there and try again.',
+            'No JSON files were found in the app exports folder:\n${dir.path}\n\nPlease place your export JSON file there and try again.',
           ),
           actions: [
             TextButton(
