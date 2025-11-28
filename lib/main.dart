@@ -60,6 +60,10 @@ class _RootWithOnboardingState extends State<_RootWithOnboarding> {
     _shownOnboarding = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final settings = DatabaseService.settings;
+      final alreadySeen = settings['hasSeenTutorial'] as bool? ?? false;
+      if (alreadySeen) return;
+
       final timetable = context.read<TimetableService>();
       final hasLessons = timetable.lessons.isNotEmpty;
       final usesWeekNumbers = timetable.lessons.any((l) => l.weekNumber != 0);
@@ -68,48 +72,147 @@ class _RootWithOnboardingState extends State<_RootWithOnboarding> {
         context: context,
         barrierDismissible: true,
         builder: (context) {
-          return AlertDialog(
-            title: Text('Welcome to ${AppConstants.appName}'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This app helps you keep track of your lessons and the books you need for each one.',
-                ),
-                const SizedBox(height: 12),
-                if (!hasLessons)
-                  const Text(
-                    'Start by adding lessons in the Timetable tab. You can set each lesson to repeat every week, every two weeks, or with a custom interval – no fixed A/B pattern required.',
-                  )
-                else if (usesWeekNumbers)
-                  const Text(
-                    'We detected existing lessons using an A/B (week 1 / week 2) pattern. Those will keep working exactly as before. New lessons can still use flexible recurrence like every week, every two weeks, or custom intervals.',
-                  )
-                else
-                  const Text(
-                    'Your existing lessons will continue to repeat according to their recurrence settings. You are not limited to an A/B week pattern – use weekly, biweekly, or custom intervals per lesson.',
-                  ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Tip: Tap a lesson in the timetable to see its details, edit it, or manage notes and books.',
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Got it'),
-              ),
-            ],
+          return TutorialDialog(
+            hasLessons: hasLessons,
+            usesWeekNumbers: usesWeekNumbers,
           );
         },
       );
+
+      settings['hasSeenTutorial'] = true;
+      await DatabaseService.save();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return const HomeScreen();
+  }
+}
+
+class TutorialDialog extends StatefulWidget {
+  final bool hasLessons;
+  final bool usesWeekNumbers;
+
+  const TutorialDialog({
+    required this.hasLessons,
+    required this.usesWeekNumbers,
+  });
+
+  @override
+  State<TutorialDialog> createState() => _TutorialDialogState();
+}
+
+class _TutorialDialogState extends State<TutorialDialog> {
+  int _page = 0;
+
+  void _next() {
+    setState(() {
+      _page = (_page + 1).clamp(0, 2);
+    });
+  }
+
+  void _prev() {
+    setState(() {
+      _page = (_page - 1).clamp(0, 2);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = <Widget>[
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Welcome to ClassFlow',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Keep track of your timetable and which books you need for each lesson.',
+          ),
+        ],
+      ),
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Flexible schedule',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (!widget.hasLessons)
+            const Text(
+              'Start by adding lessons in the Timetable tab. Each lesson can repeat every week, every two weeks, or with a custom interval – no fixed A/B pattern required.',
+            )
+          else if (widget.usesWeekNumbers)
+            const Text(
+              'We detected existing lessons using an A/B (week 1 / week 2) pattern. Those will keep working exactly as before. New lessons can still use flexible recurrence.',
+            )
+          else
+            const Text(
+              'Your existing lessons will continue to repeat according to their recurrence settings. You are not limited to an A/B week pattern – use weekly, biweekly, or custom intervals per lesson.',
+            ),
+        ],
+      ),
+      Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text(
+            'Tips',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+          Text('• Tap a lesson to edit details and books.'),
+          SizedBox(height: 4),
+          Text('• Use the Scanner tab to quickly find a book by QR code.'),
+        ],
+      ),
+    ];
+
+    return AlertDialog(
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          pages[_page],
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: _page == 0 ? null : _prev,
+                child: const Text('Previous'),
+              ),
+              Row(
+                children: List.generate(
+                  pages.length,
+                  (i) => Container(
+                    width: 8,
+                    height: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i == _page
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).disabledColor,
+                    ),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _page == pages.length - 1
+                    ? () => Navigator.of(context).pop()
+                    : _next,
+                child: Text(_page == pages.length - 1 ? 'Done' : 'Next'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

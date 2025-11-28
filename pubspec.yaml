@@ -44,6 +44,9 @@ dependencies:
   printing: ^5.10.1
   barcode: ^2.1.0
 
+  # Windows installer packaging
+  msix: ^3.16.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -53,3 +56,19 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+msix_config:
+  display_name: ClassFlow
+  publisher_display_name: OmgRod
+  identity_name: dev.omgrod.classflow
+  msix_version: 1.0.0.0
+  publisher: CN=OmgRod
+
+  logo_path: windows/runner/resources/app_icon.ico
+  start_menu_icon_path: windows/runner/resources/app_icon.ico
+  tile_icon_path: windows/runner/resources/app_icon.ico
+  vs_generated_images_folder_path: windows/runner/resources
+
+  capabilities: "internetClient"
+  device_capabilities:
+    - webcam

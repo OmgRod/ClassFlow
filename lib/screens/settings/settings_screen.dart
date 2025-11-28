@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 import '../../services/database_service.dart';
 import '../../services/book_service.dart';
 import '../../services/theme_service.dart';
+import '../../services/timetable_service.dart';
+import '../../main.dart' show TutorialDialog;
 import '../../models/models.dart';
 import '../../utils/file_utils.dart';
 
@@ -1030,6 +1032,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  // Allow user to re-show the onboarding/tutorial dialog.
+                  DatabaseService.settings['hasSeenTutorial'] = false;
+                  await DatabaseService.save();
+                  // Immediately show the tutorial now.
+                  final timetable = context.read<TimetableService>();
+                  final hasLessons = timetable.lessons.isNotEmpty;
+                  final usesWeekNumbers = timetable.lessons.any(
+                    (l) => l.weekNumber != 0,
+                  );
+                  await showDialog<void>(
+                    context: context,
+                    barrierDismissible: true,
+                    builder: (context) {
+                      return TutorialDialog(
+                        hasLessons: hasLessons,
+                        usesWeekNumbers: usesWeekNumbers,
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(Icons.help_outline),
+                label: const Text('Show tutorial'),
+              ),
+              const SizedBox(height: 24),
               const Text(
                 'Notes: If a lesson has its own start date that will be used before this global setting.',
               ),
