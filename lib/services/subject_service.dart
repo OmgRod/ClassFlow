@@ -44,8 +44,9 @@ class SubjectService extends ChangeNotifier {
   /// Update an existing subject
   Future<void> updateSubject(Subject subject) async {
     subject.name = Subject.formatName(subject.name);
-    final index =
-        DatabaseService.subjects.indexWhere((s) => s.id == subject.id);
+    final index = DatabaseService.subjects.indexWhere(
+      (s) => s.id == subject.id,
+    );
     if (index != -1) {
       DatabaseService.subjects[index] = subject;
       await DatabaseService.save();

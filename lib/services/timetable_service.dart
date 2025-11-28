@@ -76,8 +76,7 @@ class TimetableService extends ChangeNotifier {
 
   /// Update an existing lesson
   Future<void> updateLesson(Lesson lesson) async {
-    final index =
-        DatabaseService.lessons.indexWhere((l) => l.id == lesson.id);
+    final index = DatabaseService.lessons.indexWhere((l) => l.id == lesson.id);
     if (index != -1) {
       DatabaseService.lessons[index] = lesson;
     } else {
@@ -323,8 +322,9 @@ class TimetableService extends ChangeNotifier {
 
   /// Update an existing template
   Future<void> updateTemplate(LessonTemplate template) async {
-    final index =
-        DatabaseService.templates.indexWhere((t) => t.id == template.id);
+    final index = DatabaseService.templates.indexWhere(
+      (t) => t.id == template.id,
+    );
     if (index != -1) {
       DatabaseService.templates[index] = template;
     } else {

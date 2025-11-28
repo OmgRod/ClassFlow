@@ -439,10 +439,8 @@ class _TimetableScreenState extends State<TimetableScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LessonFormScreen(
-          dayOfWeek: dayOfWeek,
-          weekNumber: 0,
-        ),
+        builder: (context) =>
+            LessonFormScreen(dayOfWeek: dayOfWeek, weekNumber: 0),
       ),
     );
   }

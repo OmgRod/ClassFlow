@@ -15,9 +15,7 @@ class BookService extends ChangeNotifier {
   void _loadBooks() {
     _books = List<Book>.from(DatabaseService.books);
     try {
-      debugPrint(
-        'BookService: loaded ${_books.length} books from JSON db',
-      );
+      debugPrint('BookService: loaded ${_books.length} books from JSON db');
     } catch (_) {}
     notifyListeners();
   }
@@ -49,8 +47,9 @@ class BookService extends ChangeNotifier {
     }
     // Ensure the subject knows about this book ID
     try {
-      final subj =
-          DatabaseService.subjects.firstWhereOrNull((s) => s.id == subjectId);
+      final subj = DatabaseService.subjects.firstWhereOrNull(
+        (s) => s.id == subjectId,
+      );
       if (subj != null && !subj.bookIds.contains(book.id)) {
         subj.bookIds.add(book.id);
         await DatabaseService.save();
@@ -64,11 +63,11 @@ class BookService extends ChangeNotifier {
   /// Update an existing book
   Future<void> updateBook(Book book) async {
     // Get existing book to detect subject change
-    final existing =
-      DatabaseService.books.firstWhereOrNull((b) => b.id == book.id);
+    final existing = DatabaseService.books.firstWhereOrNull(
+      (b) => b.id == book.id,
+    );
     try {
-      final index =
-          DatabaseService.books.indexWhere((b) => b.id == book.id);
+      final index = DatabaseService.books.indexWhere((b) => b.id == book.id);
       if (index != -1) {
         DatabaseService.books[index] = book;
       } else {
@@ -83,8 +82,9 @@ class BookService extends ChangeNotifier {
     if (existing != null && existing.subjectId != book.subjectId) {
       // Remove from old subject
       try {
-        final oldSubj = DatabaseService.subjects
-            .firstWhereOrNull((s) => s.id == existing.subjectId);
+        final oldSubj = DatabaseService.subjects.firstWhereOrNull(
+          (s) => s.id == existing.subjectId,
+        );
         if (oldSubj != null && oldSubj.bookIds.contains(book.id)) {
           oldSubj.bookIds.remove(book.id);
           await DatabaseService.save();
@@ -92,8 +92,9 @@ class BookService extends ChangeNotifier {
       } catch (_) {}
       // Add to new subject
       try {
-        final newSubj = DatabaseService.subjects
-            .firstWhereOrNull((s) => s.id == book.subjectId);
+        final newSubj = DatabaseService.subjects.firstWhereOrNull(
+          (s) => s.id == book.subjectId,
+        );
         if (newSubj != null && !newSubj.bookIds.contains(book.id)) {
           newSubj.bookIds.add(book.id);
           await DatabaseService.save();
@@ -107,8 +108,7 @@ class BookService extends ChangeNotifier {
   /// Delete a book
   Future<void> deleteBook(int id) async {
     // Remove book and update subject mapping
-    final existing =
-      DatabaseService.books.firstWhereOrNull((b) => b.id == id);
+    final existing = DatabaseService.books.firstWhereOrNull((b) => b.id == id);
     try {
       DatabaseService.books.removeWhere((b) => b.id == id);
       await DatabaseService.save();
@@ -118,8 +118,9 @@ class BookService extends ChangeNotifier {
     }
     if (existing != null) {
       try {
-        final subj = DatabaseService.subjects
-            .firstWhereOrNull((s) => s.id == existing.subjectId);
+        final subj = DatabaseService.subjects.firstWhereOrNull(
+          (s) => s.id == existing.subjectId,
+        );
         if (subj != null && subj.bookIds.contains(id)) {
           subj.bookIds.remove(id);
           await DatabaseService.save();
@@ -157,7 +158,9 @@ class BookService extends ChangeNotifier {
   String getBookStatus(int bookId) {
     try {
       final raw = DatabaseService.settings['bookStatuses'];
-      final map = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+      final map = raw is Map
+          ? Map<String, dynamic>.from(raw)
+          : <String, dynamic>{};
       return map['$bookId'] as String? ?? 'available';
     } catch (_) {
       return 'available';
@@ -167,7 +170,9 @@ class BookService extends ChangeNotifier {
   /// Set a status for a book and notify listeners so UI can update
   Future<void> setBookStatus(int bookId, String status) async {
     final raw = DatabaseService.settings['bookStatuses'];
-    final existing = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    final existing = raw is Map
+        ? Map<String, dynamic>.from(raw)
+        : <String, dynamic>{};
     existing['$bookId'] = status;
     DatabaseService.settings['bookStatuses'] = existing;
     await DatabaseService.save();
@@ -215,7 +220,9 @@ class BookService extends ChangeNotifier {
     final result = <String, int>{'removed': 0, 'added': 0};
     try {
       final raw = DatabaseService.settings['bookStatuses'];
-      final existing = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+      final existing = raw is Map
+          ? Map<String, dynamic>.from(raw)
+          : <String, dynamic>{};
       final bookIds = DatabaseService.books.map((b) => b.id).toSet();
 
       final newMap = <String, String>{};

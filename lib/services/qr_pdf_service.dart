@@ -27,7 +27,11 @@ class QrPdfService {
     // reserve some vertical space for label under each QR
     final labelHeight = 20.0;
     final verticalSpacing = 8.0;
-    final tileHeight = tileWidth + labelHeight + verticalSpacing + 24.0; // extra for padding/border
+    final tileHeight =
+        tileWidth +
+        labelHeight +
+        verticalSpacing +
+        24.0; // extra for padding/border
     final rows = (pageHeight / tileHeight).floor().clamp(1, 12);
 
     final perPage = columns * rows;

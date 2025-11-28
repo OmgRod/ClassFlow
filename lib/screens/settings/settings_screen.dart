@@ -38,10 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadSettings() {
     invertWeekParity =
-      (DatabaseService.settings['invertWeekParity'] as bool?) ?? false;
+        (DatabaseService.settings['invertWeekParity'] as bool?) ?? false;
     final iso = DatabaseService.settings['week1StartDate'] as String?;
-    themeMode =
-      (DatabaseService.settings['themeMode'] as String?) ?? 'system';
+    themeMode = (DatabaseService.settings['themeMode'] as String?) ?? 'system';
     exportPath = DatabaseService.settings['exportPath'] as String?;
     if (iso != null) week1StartDate = DateTime.tryParse(iso);
     setState(() {});
@@ -116,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                    if (mode == 'app') {
+                  if (mode == 'app') {
                     DatabaseService.settings.remove('exportPath');
                     await DatabaseService.save();
                     setState(() => exportPath = null);
@@ -336,21 +335,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList();
 
       // Special lessons
-        payload['special_lessons'] = DatabaseService.specialLessons
-          .map((s) {
-            return {
-              'id': s.id,
-              'date': s.date.toIso8601String(),
-              'subjectId': s.subjectId,
-              'startHour': s.startHour,
-              'startMinute': s.startMinute,
-              'endHour': s.endHour,
-              'endMinute': s.endMinute,
-              'originalLessonId': s.originalLessonId,
-              'notes': s.notes,
-            };
-          })
-          .toList();
+      payload['special_lessons'] = DatabaseService.specialLessons.map((s) {
+        return {
+          'id': s.id,
+          'date': s.date.toIso8601String(),
+          'subjectId': s.subjectId,
+          'startHour': s.startHour,
+          'startMinute': s.startMinute,
+          'endHour': s.endHour,
+          'endMinute': s.endMinute,
+          'originalLessonId': s.originalLessonId,
+          'notes': s.notes,
+        };
+      }).toList();
 
       // Settings
       payload['settings'] = Map<String, dynamic>.from(DatabaseService.settings);

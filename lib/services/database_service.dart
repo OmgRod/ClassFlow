@@ -89,36 +89,41 @@ class DatabaseService {
     subjects
       ..clear()
       ..addAll(
-        (data['subjects'] as List<dynamic>? ?? [])
-            .map((e) => Subject.fromJson(e as Map<String, dynamic>)),
+        (data['subjects'] as List<dynamic>? ?? []).map(
+          (e) => Subject.fromJson(e as Map<String, dynamic>),
+        ),
       );
 
     books
       ..clear()
       ..addAll(
-        (data['books'] as List<dynamic>? ?? [])
-            .map((e) => Book.fromJson(e as Map<String, dynamic>)),
+        (data['books'] as List<dynamic>? ?? []).map(
+          (e) => Book.fromJson(e as Map<String, dynamic>),
+        ),
       );
 
     lessons
       ..clear()
       ..addAll(
-        (data['lessons'] as List<dynamic>? ?? [])
-            .map((e) => Lesson.fromJson(e as Map<String, dynamic>)),
+        (data['lessons'] as List<dynamic>? ?? []).map(
+          (e) => Lesson.fromJson(e as Map<String, dynamic>),
+        ),
       );
 
     templates
       ..clear()
       ..addAll(
-        (data['lessonTemplates'] as List<dynamic>? ?? [])
-            .map((e) => LessonTemplate.fromJson(e as Map<String, dynamic>)),
+        (data['lessonTemplates'] as List<dynamic>? ?? []).map(
+          (e) => LessonTemplate.fromJson(e as Map<String, dynamic>),
+        ),
       );
 
     specialLessons
       ..clear()
       ..addAll(
-        (data['specialLessons'] as List<dynamic>? ?? [])
-            .map((e) => SpecialLesson.fromJson(e as Map<String, dynamic>)),
+        (data['specialLessons'] as List<dynamic>? ?? []).map(
+          (e) => SpecialLesson.fromJson(e as Map<String, dynamic>),
+        ),
       );
 
     settings

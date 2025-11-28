@@ -191,8 +191,9 @@ class Lesson {
       startMinute: json['startMinute'] as int,
       endHour: json['endHour'] as int,
       endMinute: json['endMinute'] as int,
-      recurrenceType:
-          RecurrenceTypeJson.fromJson(json['recurrenceType'] as String),
+      recurrenceType: RecurrenceTypeJson.fromJson(
+        json['recurrenceType'] as String,
+      ),
       customIntervalWeeks: json['customIntervalWeeks'] as int?,
       startDate: json['startDate'] != null
           ? DateTime.parse(json['startDate'] as String)
@@ -203,11 +204,8 @@ class Lesson {
     );
   }
 }
-enum RecurrenceType {
-  everyWeek,
-  everyTwoWeeks,
-  custom,
-}
+
+enum RecurrenceType { everyWeek, everyTwoWeeks, custom }
 
 extension RecurrenceTypeJson on RecurrenceType {
   String toJson() {

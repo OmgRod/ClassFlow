@@ -25,22 +25,24 @@ class DetentionSafeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BookService()),
         ChangeNotifierProvider(create: (_) => TimetableService()),
       ],
-      child: Builder(builder: (context) {
-        final modeStr =
-            (DatabaseService.settings['themeMode'] as String?) ?? 'system';
-        ThemeMode mode = ThemeMode.system;
-        if (modeStr == 'light') mode = ThemeMode.light;
-        if (modeStr == 'dark') mode = ThemeMode.dark;
+      child: Builder(
+        builder: (context) {
+          final modeStr =
+              (DatabaseService.settings['themeMode'] as String?) ?? 'system';
+          ThemeMode mode = ThemeMode.system;
+          if (modeStr == 'light') mode = ThemeMode.light;
+          if (modeStr == 'dark') mode = ThemeMode.dark;
 
-        return MaterialApp(
-          title: AppConstants.appName,
-          theme: AppTheme.lightTheme,
-          darkTheme: ThemeData.dark(),
-          themeMode: mode,
-          debugShowCheckedModeBanner: false,
-          home: const HomeScreen(),
-        );
-      }),
+          return MaterialApp(
+            title: AppConstants.appName,
+            theme: AppTheme.lightTheme,
+            darkTheme: ThemeData.dark(),
+            themeMode: mode,
+            debugShowCheckedModeBanner: false,
+            home: const HomeScreen(),
+          );
+        },
+      ),
     );
   }
 }

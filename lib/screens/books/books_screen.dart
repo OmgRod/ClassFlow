@@ -24,7 +24,9 @@ class _BooksScreenState extends State<BooksScreen> {
     setState(() {
       _selected
         ..clear()
-        ..addAll(subjects.expand((s) => s.bookIds.map((b) => _keyFor(s.id, b))));
+        ..addAll(
+          subjects.expand((s) => s.bookIds.map((b) => _keyFor(s.id, b))),
+        );
     });
   }
 
@@ -177,9 +179,8 @@ class _BooksScreenState extends State<BooksScreen> {
               if (subjectsWithBooks.isNotEmpty)
                 IconButton(
                   icon: Icon(
-                    _selected.length == subjectsWithBooks
-                            .expand((s) => s.bookIds)
-                            .length
+                    _selected.length ==
+                            subjectsWithBooks.expand((s) => s.bookIds).length
                         ? Icons.select_all
                         : Icons.done_all,
                   ),
