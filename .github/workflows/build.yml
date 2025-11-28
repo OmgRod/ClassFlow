@@ -93,6 +93,36 @@ jobs:
         run: |
           # Build unsigned MSIX (no cert config in pubspec)
           flutter pub run msix:create
+      - name: Locate signtool.exe
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if ($signtool) { echo "SIGNSRC=$($signtool.Path)" >> $env:GITHUB_ENV; exit 0 }
+          # Try Visual Studio installation via vswhere
+          $vswhere = "$Env:ProgramFiles(x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            $vs = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
+            if ($vs) {
+              $candidate = Join-Path $vs "Common7\Tools\vsdevcmd.bat"
+              if (Test-Path $candidate) { cmd /c "$candidate & where signtool" | ForEach-Object { if (Test-Path $_) { echo "SIGNSRC=$_" >> $env:GITHUB_ENV } } }
+            }
+          }
+          # Search Windows Kits folders
+          $kits = @("$Env:ProgramFiles(x86)\Windows Kits\10\bin", "$Env:ProgramFiles\Windows Kits\10\bin")
+          foreach ($k in $kits) {
+            if (Test-Path $k) {
+              $found = Get-ChildItem -Path $k -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) { echo "SIGNSRC=$($found.FullName)" >> $env:GITHUB_ENV; break }
+            }
+          }
+          if (-not $env:SIGNSRC) {
+            Write-Host 'signtool not found; installing Windows SDK via winget'
+            winget install --id Microsoft.WindowsSDK -e --source winget --silent || Write-Host 'winget install failed or unavailable.'
+            $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+            if ($signtool) { echo "SIGNSRC=$($signtool.Path)" >> $env:GITHUB_ENV }
+          }
+          if (-not $env:SIGNSRC) { throw 'signtool.exe not found after attempts.' }
       - name: Sign MSIX via signtool
         if: success()
         shell: powershell
@@ -100,9 +130,9 @@ jobs:
           $msix = 'build/windows/x64/runner/Release/classflow.msix'
           if (-not (Test-Path $msix)) { throw "MSIX not found at $msix" }
           if (-not $env:SIGN_CERT_PASSWORD) { throw 'SIGN_CERT_PASSWORD secret not set' }
-          $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue)
-          if (-not $signtool) { throw 'signtool.exe not found; ensure Windows SDK is available.' }
-          & $signtool.Path sign /fd sha256 /f omgrod-code-signing.pfx /p $env:SIGN_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 $msix
+          $signtoolPath = $env:SIGNSRC
+          if (-not $signtoolPath) { throw 'signtool path environment variable SIGNSRC not set' }
+          & "$signtoolPath" sign /fd sha256 /f omgrod-code-signing.pfx /p $env:SIGN_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 $msix
           Write-Host 'MSIX signed successfully.'
       - name: Upload MSIX installer
         uses: actions/upload-artifact@v4
@@ -130,10 +160,16 @@ jobs:
       - run: flutter config --enable-macos-desktop
       - run: flutter pub get
       - run: flutter build macos --release
-      - name: Zip macOS app bundle
+      - name: Zip macOS app bundle (if present)
         run: |
-          cd build/macos/Build/Products/Release
-          zip -r ../../../../classflow-macos.zip *.app
+          APP_DIR="build/macos/Build/Products/Release"
+          APP_FILES=$(find "$APP_DIR" -maxdepth 3 -name "*.app" -print || true)
+          if [ -z "$APP_FILES" ]; then
+            echo "No .app bundles found under $APP_DIR; skipping macOS artifact.";
+            exit 0;
+          fi
+          # Create zip with app bundles
+          zip -r classflow-macos.zip $APP_FILES
       - uses: actions/upload-artifact@v4
         with:
           name: classflow-macos
