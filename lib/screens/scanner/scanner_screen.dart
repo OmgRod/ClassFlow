@@ -290,7 +290,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
               'QR codes are in format: SubjectID-BookID-SubjectName',
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? theme.colorScheme.onSurfaceVariant : Colors.grey.shade500,
+                color: isDark
+                    ? theme.colorScheme.onSurfaceVariant
+                    : Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
             ),
@@ -302,7 +304,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   Widget _buildErrorState(ThemeData theme, bool isDark) {
     return Card(
-      color: isDark ? theme.colorScheme.errorContainer.withOpacity(0.2) : Colors.red.shade50,
+      color: isDark
+          ? theme.colorScheme.errorContainer.withOpacity(0.2)
+          : Colors.red.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -351,7 +355,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         : AppColors.getDefaultSubjectColor(_scannedSubject!.id);
 
     return Card(
-      color: isDark ? theme.colorScheme.surfaceVariant.withOpacity(0.3) : Colors.green.shade50,
+      color: isDark
+          ? theme.colorScheme.surfaceVariant.withOpacity(0.3)
+          : Colors.green.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -424,7 +430,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isDark ? theme.colorScheme.onSurface.withOpacity(0.08) : Colors.white,
+                color: isDark
+                    ? theme.colorScheme.onSurface.withOpacity(0.08)
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
