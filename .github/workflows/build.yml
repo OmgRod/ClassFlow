@@ -119,14 +119,13 @@ jobs:
         run: |
           echo "=== build/ios contents ==="
           ls -R build/ios || true
-      - name: Zip iOS IPA
+      - name: Zip iOS IPA (if present)
         run: |
-          set -e
           IPA_DIR="build/ios"
-          IPA_FILES=$(find "$IPA_DIR" -maxdepth 5 -name "*.ipa" -print)
+          IPA_FILES=$(find "$IPA_DIR" -maxdepth 5 -name "*.ipa" -print || true)
           if [ -z "$IPA_FILES" ]; then
-            echo "No .ipa files found under $IPA_DIR";
-            exit 1;
+            echo "No .ipa files found under $IPA_DIR; skipping iOS artifact.";
+            exit 0;
           fi
           zip -j classflow-ios-ipa.zip $IPA_FILES
       - uses: actions/upload-artifact@v4

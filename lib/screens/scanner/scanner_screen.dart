@@ -44,6 +44,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scanner'),
@@ -130,8 +133,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
             flex: 2,
             child: Container(
               width: double.infinity,
+              color: isDark ? theme.colorScheme.surface : null,
               padding: const EdgeInsets.all(16),
-              child: _buildResultPanel(),
+              child: _buildResultPanel(theme, isDark),
             ),
           ),
         ],
@@ -249,16 +253,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildResultPanel() {
+  Widget _buildResultPanel(ThemeData theme, bool isDark) {
     Widget main;
     if (_lastScannedCode == null) {
-      main = _buildEmptyState();
+      main = _buildEmptyState(theme, isDark);
     } else if (_hasError) {
-      main = _buildErrorState();
+      main = _buildErrorState(theme, isDark);
     } else if (_scannedSubject != null) {
-      main = _buildSuccessState();
+      main = _buildSuccessState(theme, isDark);
     } else {
-      main = _buildEmptyState();
+      main = _buildEmptyState(theme, isDark);
     }
 
     return SingleChildScrollView(
@@ -268,7 +272,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
   // Note: status reporting is now handled from the Books screen only.
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme, bool isDark) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -284,7 +288,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
             const SizedBox(height: 8),
             Text(
               'QR codes are in format: SubjectID-BookID-SubjectName',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? theme.colorScheme.onSurfaceVariant : Colors.grey.shade500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -293,9 +300,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(ThemeData theme, bool isDark) {
     return Card(
-      color: Colors.red.shade50,
+      color: isDark ? theme.colorScheme.errorContainer.withOpacity(0.2) : Colors.red.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -338,13 +345,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
     );
   }
 
-  Widget _buildSuccessState() {
+  Widget _buildSuccessState(ThemeData theme, bool isDark) {
     final color = _scannedSubject!.colorValue != null
         ? Color(_scannedSubject!.colorValue!)
         : AppColors.getDefaultSubjectColor(_scannedSubject!.id);
 
     return Card(
-      color: Colors.green.shade50,
+      color: isDark ? theme.colorScheme.surfaceVariant.withOpacity(0.3) : Colors.green.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -417,12 +424,15 @@ class _ScannerScreenState extends State<ScannerScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? theme.colorScheme.onSurface.withOpacity(0.08) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 'Code: $_lastScannedCode',
-                style: const TextStyle(fontFamily: 'monospace'),
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  color: isDark ? theme.colorScheme.onSurface : null,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
