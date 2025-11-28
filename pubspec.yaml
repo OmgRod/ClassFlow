@@ -72,3 +72,6 @@ msix_config:
   capabilities: "internetClient"
   device_capabilities:
     - webcam
+  # Ensure CI/non-interactive builds: do not sign within msix, no cert prompts
+  sign_msix: false
+  install_certificate: false
