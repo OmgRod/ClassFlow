@@ -64,10 +64,7 @@ class TimeUtils {
     try {
       final parts = timeStr.split(':');
       if (parts.length != 2) return null;
-      return TimeOfDay(
-        hour: int.parse(parts[0]),
-        minute: int.parse(parts[1]),
-      );
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
     } catch (e) {
       return null;
     }
