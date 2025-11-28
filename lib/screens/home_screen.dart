@@ -30,10 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text(_titles[_selectedIndex]),
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: _showAboutDialog,
-          ),
-          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.push(
@@ -67,38 +63,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.book_outlined),
             selectedIcon: Icon(Icons.book),
             label: 'Books',
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAboutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(AppConstants.appName),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Version ${AppConstants.appVersion}'),
-            const SizedBox(height: 16),
-            const Text(
-              'A Flutter app for managing subjects, books with QR codes, and timetables.',
-            ),
-            const SizedBox(height: 16),
-            const Text('Features:'),
-            const Text('• Subject Management'),
-            const Text('• Book QR Code Generation'),
-            const Text('• Timetable System'),
-            const Text('• QR Code Scanner'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
           ),
         ],
       ),

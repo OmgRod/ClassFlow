@@ -308,7 +308,7 @@ class _SubjectBooksCard extends StatelessWidget {
           // Books list
           ...subject.bookIds.map((bookId) {
             final code = subject.generateCode(bookId);
-            final status = bookService.getBookStatus(bookId);
+            final status = bookService.getBookStatus(subject.id, bookId);
             Color statusColor;
             String statusLabel;
             switch (status) {
@@ -358,22 +358,62 @@ class _SubjectBooksCard extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withOpacity(0.9)),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.w600,
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      final bookService = context.read<BookService>();
+                      switch (value) {
+                        case 'available':
+                          bookService.setBookStatus(
+                            subject.id,
+                            bookId,
+                            'available',
+                          );
+                          break;
+                        case 'handed_in':
+                          bookService.markBookHandedIn(subject.id, bookId);
+                          break;
+                        case 'missing':
+                          bookService.markBookMissing(subject.id, bookId);
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'available',
+                        child: Text('Available'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'handed_in',
+                        child: Text('Handed in'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'missing',
+                        child: Text('Missing'),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: statusColor.withOpacity(0.9)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            statusLabel,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const Icon(Icons.arrow_drop_down, size: 18),
+                        ],
                       ),
                     ),
                   ),

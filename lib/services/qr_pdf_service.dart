@@ -19,22 +19,35 @@ class QrPdfService {
 
     final pageFormat = PdfPageFormat.a4;
     final pageWidth = pageFormat.width; // points
-    final pageHeight = pageFormat.height;
 
     final tileWidth = (pageWidth * scale).clamp(60.0, pageWidth);
-    final columns = (pageWidth / tileWidth).floor().clamp(1, 6);
 
-    // reserve some vertical space for label under each QR
-    final labelHeight = 20.0;
-    final verticalSpacing = 8.0;
-    final tileHeight =
-        tileWidth +
-        labelHeight +
-        verticalSpacing +
-        24.0; // extra for padding/border
-    final rows = (pageHeight / tileHeight).floor().clamp(1, 12);
+    // Simple, reliable capacity: fixed columns x rows based on geometry.
+    // This avoids the probe doc double-counting across layout passes.
+    final columns = (pageWidth / (tileWidth + 16)).floor().clamp(1, 6);
 
-    final perPage = columns * rows;
+    // Reserve margins and spacing; keep rows small so we never overfill.
+    const pagePadding = 24.0;
+    const verticalSpacing = 16.0; // Wrap runSpacing
+    const tileVertical =
+        16.0 * 2 + // container padding
+        (0.7) + // QR aspect ratio factor (relative)
+        10.0 + // gap
+        14.0; // text line
+
+    final usableHeight = pageFormat.height - pagePadding * 2;
+    final approxTileHeight = (pageWidth * scale * tileVertical).clamp(
+      80.0,
+      240.0,
+    );
+    int rows =
+        ((usableHeight + verticalSpacing) /
+                (approxTileHeight + verticalSpacing))
+            .floor();
+    if (rows < 1) rows = 1;
+    if (rows > 6) rows = 6;
+
+    final perPage = (columns * rows).clamp(1, 48);
 
     int pageIndex = 0;
     while (pageIndex * perPage < items.length) {
@@ -53,8 +66,6 @@ class QrPdfService {
                 runSpacing: 16,
                 children: slice.map((it) {
                   final code = it['code'] ?? '';
-                  final label = it['label'] ?? '';
-
                   return pw.SizedBox(
                     width: tileWidth,
                     child: pw.Column(

@@ -27,10 +27,7 @@ class SubjectsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   'No subjects yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 8),
                 const Text('Tap + to add your first subject'),
@@ -55,17 +52,18 @@ class SubjectsScreen extends StatelessWidget {
                 return _SubjectCard(
                   subject: subject,
                   onTap: () => _navigateToEditSubject(context, subject),
-                  onDelete: () => _confirmDelete(context, subject, subjectService),
+                  onDelete: () =>
+                      _confirmDelete(context, subject, subjectService),
                 );
               },
             ),
             Positioned(
               bottom: 16,
               right: 16,
-              child: FloatingActionButton.extended(
+              child: FloatingActionButton(
                 onPressed: () => _navigateToAddSubject(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Subject'),
+                child: const Icon(Icons.add),
+                tooltip: 'Add Subject',
               ),
             ),
           ],
@@ -77,9 +75,7 @@ class SubjectsScreen extends StatelessWidget {
   void _navigateToAddSubject(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SubjectFormScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const SubjectFormScreen()),
     );
   }
 
