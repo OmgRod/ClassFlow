@@ -118,7 +118,11 @@ jobs:
           }
           if (-not $env:SIGNSRC) {
             Write-Host 'signtool not found; installing Windows SDK via winget'
-            winget install --id Microsoft.WindowsSDK -e --source winget --silent || Write-Host 'winget install failed or unavailable.'
+            try {
+              winget install --id Microsoft.WindowsSDK -e --source winget --silent
+            } catch {
+              Write-Host 'winget install failed or unavailable.'
+            }
             $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
             if ($signtool) { echo "SIGNSRC=$($signtool.Path)" >> $env:GITHUB_ENV }
           }
