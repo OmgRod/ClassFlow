@@ -21,9 +21,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
   int? _scannedBookId;
   bool _hasError = false;
   String? _errorMessage;
-  // Manual fallback selection
-  bool _manualMode = false;
-  int? _manualSelectedBookId;
 
   @override
   void initState() {
@@ -122,42 +119,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                // Scan status indicator
-                Positioned(
-                  bottom: 24,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isScanning ? Colors.green : Colors.orange,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isScanning ? Icons.qr_code_scanner : Icons.pause,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _isScanning ? 'Scanning...' : 'Paused',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -301,150 +262,11 @@ class _ScannerScreenState extends State<ScannerScreen> {
     }
 
     return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [main, const SizedBox(height: 12), _buildManualFallback()],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [main]),
     );
   }
 
-  Widget _buildManualFallback() {
-    final bookService = context.watch<BookService>();
-    final subjectService = context.watch<SubjectService>();
-    // Ensure book & subject lists are fresh
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      bookService.refresh();
-      subjectService.refresh();
-    });
-    final books = bookService.books;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.handshake, color: Colors.blue),
-                const SizedBox(width: 8),
-                const Expanded(child: Text('Manual fallback & reports')),
-                TextButton(
-                  onPressed: () => setState(() => _manualMode = !_manualMode),
-                  child: Text(_manualMode ? 'Hide' : 'Manual Select'),
-                ),
-              ],
-            ),
-            if (_manualMode) ...[
-              const SizedBox(height: 8),
-              DropdownButton<int>(
-                isExpanded: true,
-                hint: const Text('Select book'),
-                value: _manualSelectedBookId,
-                items: books.map((b) {
-                  final subj = subjectService.getSubjectById(b.subjectId);
-                  final label = subj != null
-                      ? '${subj.name} - ${b.id}'
-                      : 'Book ${b.id}';
-                  return DropdownMenuItem<int>(value: b.id, child: Text(label));
-                }).toList(),
-                onChanged: (v) => setState(() => _manualSelectedBookId = v),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _manualSelectedBookId == null
-                          ? null
-                          : _confirmManualSelection,
-                      child: const Text('Use Selected Book'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed:
-                        ((_manualSelectedBookId ?? _scannedBookId) == null)
-                        ? null
-                        : () => _reportBookStatus(
-                            'teacher',
-                            bookId: _manualSelectedBookId,
-                          ),
-                    child: const Text('My teacher has my book'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed:
-                        ((_manualSelectedBookId ?? _scannedBookId) == null)
-                        ? null
-                        : () => _reportBookStatus(
-                            'missing',
-                            bookId: _manualSelectedBookId,
-                          ),
-                    child: const Text("I can't find my book"),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmManualSelection() {
-    final bookService = context.read<BookService>();
-    final subjectService = context.read<SubjectService>();
-    final book = bookService.getBookById(_manualSelectedBookId!);
-    if (book == null) return;
-    final subj = subjectService.getSubjectById(book.subjectId);
-    setState(() {
-      _scannedBookId = book.id;
-      _scannedSubject = subj;
-      _lastScannedCode = book.generateQrCode(subj?.name ?? '');
-      _hasError = false;
-      _errorMessage = null;
-    });
-  }
-
-  Future<void> _reportBookStatus(String type, {int? bookId}) async {
-    // Instead of creating a report, simply mark the book status so it appears
-    // in the Books menu as missing or handed in.
-    final bookService = context.read<BookService>();
-    final idToUse = bookId ?? _scannedBookId;
-    if (idToUse == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No book selected')));
-      return;
-    }
-
-    if (type == 'teacher') {
-      await bookService.markBookHandedIn(idToUse);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Marked as handed in')));
-    } else {
-      await bookService.markBookMissing(idToUse);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Marked as missing')));
-    }
-
-    // Refresh local state and services
-    setState(() {
-      _scannedBookId = idToUse;
-    });
-    bookService.refresh();
-  }
+  // Note: status reporting is now handled from the Books screen only.
 
   Widget _buildEmptyState() {
     return Card(
@@ -619,24 +441,71 @@ class _ScannerScreenState extends State<ScannerScreen> {
   void _onDetect(BarcodeCapture capture) {
     if (!_isScanning) return;
 
-    for (final barcode in capture.barcodes) {
-      if (barcode.rawValue == null) continue;
+    if (capture.barcodes.isEmpty) return;
 
-      final code = barcode.rawValue!;
-      if (code == _lastScannedCode) continue;
+    // Prefer the barcode whose bounding box is closest to the center
+    // of the camera preview. Fall back to the first valid one.
+    final Size? size = capture.size;
+    Barcode? chosen;
 
-      setState(() {
-        _isScanning = false;
-        _lastScannedCode = code;
-        _hasError = false;
-        _errorMessage = null;
-        _scannedSubject = null;
-        _scannedBookId = null;
-      });
+    if (size != null) {
+      final center = Offset(size.width / 2, size.height / 2);
+      double bestDistance = double.infinity;
 
-      _parseCode(code);
-      break;
+      for (final b in capture.barcodes) {
+        if (b.rawValue == null) continue;
+
+        // mobile_scanner exposes corner points instead of a direct bounding box.
+        // Approximate the center by averaging the corner coordinates when available.
+        Offset candidateCenter;
+        final corners = b.corners;
+        if (corners.isNotEmpty) {
+          double sumX = 0;
+          double sumY = 0;
+          for (final p in corners) {
+            sumX += p.dx;
+            sumY += p.dy;
+          }
+          candidateCenter = Offset(
+            sumX / corners.length,
+            sumY / corners.length,
+          );
+        } else {
+          // If we don't have geometry, fall back to camera center so the
+          // first valid code will be chosen.
+          candidateCenter = center;
+        }
+        final distance = (candidateCenter - center).distance;
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          chosen = b;
+        }
+      }
     }
+
+    // If we didn't find a centered candidate with bounds, just use the first
+    // barcode that has a value.
+    chosen ??= capture.barcodes.firstWhere(
+      (b) => b.rawValue != null,
+      orElse: () => capture.barcodes.first,
+    );
+
+    if (chosen.rawValue == null) return;
+
+    final code = chosen.rawValue!;
+    if (code == _lastScannedCode) return;
+
+    setState(() {
+      _isScanning = false;
+      _lastScannedCode = code;
+      _hasError = false;
+      _errorMessage = null;
+      _scannedSubject = null;
+      _scannedBookId = null;
+    });
+
+    _parseCode(code);
   }
 
   void _parseCode(String code) {

@@ -26,9 +26,7 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-      text: widget.subject?.name ?? '',
-    );
+    _nameController = TextEditingController(text: widget.subject?.name ?? '');
     _bookIds = List.from(widget.subject?.bookIds ?? []);
     _selectedColor = widget.subject?.colorValue != null
         ? Color(widget.subject!.colorValue!)
@@ -117,19 +115,25 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
                 IconButton(
                   icon: const Icon(Icons.add_circle),
                   onPressed: _addBookId,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).colorScheme.secondary,
                 ),
               ],
             ),
             const SizedBox(height: 8),
             if (_bookIds.isEmpty)
               Card(
-                color: Colors.grey.shade100,
-                child: const Padding(
-                  padding: EdgeInsets.all(16),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).cardColor
+                    : Colors.grey.shade100,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Text(
                     'No books yet. Tap + to add a book ID.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade300
+                          : Colors.grey,
+                    ),
                   ),
                 ),
               )
@@ -188,8 +192,10 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
   }
 
   void _addBookId() {
-    final nextBookId = _bookIds.isEmpty ? 1 : _bookIds.reduce((a, b) => a > b ? a : b) + 1;
-    
+    final nextBookId = _bookIds.isEmpty
+        ? 1
+        : _bookIds.reduce((a, b) => a > b ? a : b) + 1;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -301,17 +307,15 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              isEditing ? 'Subject updated' : 'Subject added',
-            ),
+            content: Text(isEditing ? 'Subject updated' : 'Subject added'),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) {

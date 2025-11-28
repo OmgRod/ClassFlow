@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import '../../services/database_service.dart';
 import '../../services/book_service.dart';
+import '../../services/theme_service.dart';
 import '../../models/models.dart';
 import '../../utils/file_utils.dart';
 
@@ -190,8 +191,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _setThemeMode(String mode) {
     setState(() => themeMode = mode);
-    DatabaseService.settings['themeMode'] = mode;
-    DatabaseService.save();
+    final themeService = context.read<ThemeService>();
+    switch (mode) {
+      case 'light':
+        themeService.setMode(ThemeMode.light);
+        break;
+      case 'dark':
+        themeService.setMode(ThemeMode.dark);
+        break;
+      default:
+        themeService.setMode(ThemeMode.system);
+        break;
+    }
   }
 
   void _resetWeek1Reference() {

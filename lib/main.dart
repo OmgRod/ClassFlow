@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/services.dart';
+import 'services/theme_service.dart';
 import 'screens/screens.dart';
 import 'utils/theme.dart';
 import 'utils/constants.dart';
@@ -24,20 +25,15 @@ class DetentionSafeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SubjectService()),
         ChangeNotifierProvider(create: (_) => BookService()),
         ChangeNotifierProvider(create: (_) => TimetableService()),
+        ChangeNotifierProvider(create: (_) => ThemeService()),
       ],
-      child: Builder(
-        builder: (context) {
-          final modeStr =
-              (DatabaseService.settings['themeMode'] as String?) ?? 'system';
-          ThemeMode mode = ThemeMode.system;
-          if (modeStr == 'light') mode = ThemeMode.light;
-          if (modeStr == 'dark') mode = ThemeMode.dark;
-
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, _) {
           return MaterialApp(
             title: AppConstants.appName,
             theme: AppTheme.lightTheme,
             darkTheme: ThemeData.dark(),
-            themeMode: mode,
+            themeMode: themeService.mode,
             debugShowCheckedModeBanner: false,
             home: const HomeScreen(),
           );

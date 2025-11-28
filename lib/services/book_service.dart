@@ -154,36 +154,38 @@ class BookService extends ChangeNotifier {
     _loadBooks();
   }
 
+  String _statusKey(int subjectId, int bookId) => '$subjectId:$bookId';
+
   /// Get the current status for a book ('available'|'missing'|'handed_in')
-  String getBookStatus(int bookId) {
+  String getBookStatus(int subjectId, int bookId) {
     try {
       final raw = DatabaseService.settings['bookStatuses'];
       final map = raw is Map
           ? Map<String, dynamic>.from(raw)
           : <String, dynamic>{};
-      return map['$bookId'] as String? ?? 'available';
+      return map[_statusKey(subjectId, bookId)] as String? ?? 'available';
     } catch (_) {
       return 'available';
     }
   }
 
   /// Set a status for a book and notify listeners so UI can update
-  Future<void> setBookStatus(int bookId, String status) async {
+  Future<void> setBookStatus(int subjectId, int bookId, String status) async {
     final raw = DatabaseService.settings['bookStatuses'];
     final existing = raw is Map
         ? Map<String, dynamic>.from(raw)
         : <String, dynamic>{};
-    existing['$bookId'] = status;
+    existing[_statusKey(subjectId, bookId)] = status;
     DatabaseService.settings['bookStatuses'] = existing;
     await DatabaseService.save();
     notifyListeners();
   }
 
   /// Convenience helpers
-  Future<void> markBookMissing(int bookId) async =>
-      setBookStatus(bookId, 'missing');
-  Future<void> markBookHandedIn(int bookId) async =>
-      setBookStatus(bookId, 'handed_in');
+  Future<void> markBookMissing(int subjectId, int bookId) async =>
+      setBookStatus(subjectId, bookId, 'missing');
+  Future<void> markBookHandedIn(int subjectId, int bookId) async =>
+      setBookStatus(subjectId, bookId, 'handed_in');
 
   /// Public repair method: ensure that each Subject.bookIds reflects current books
   /// Returns the number of subjects that were updated.
@@ -223,12 +225,12 @@ class BookService extends ChangeNotifier {
       final existing = raw is Map
           ? Map<String, dynamic>.from(raw)
           : <String, dynamic>{};
-      final bookIds = DatabaseService.books.map((b) => b.id).toSet();
+      final books = List<Book>.from(DatabaseService.books);
 
       final newMap = <String, String>{};
 
-      for (final id in bookIds) {
-        final key = '$id';
+      for (final b in books) {
+        final key = _statusKey(b.subjectId, b.id);
         if (existing.containsKey(key)) {
           newMap[key] = existing[key] as String;
         } else {
@@ -237,10 +239,11 @@ class BookService extends ChangeNotifier {
         }
       }
 
-      // Count removals
+      // Count removals: anything in existing that doesn't correspond to
+      // a current (subjectId, bookId) pair.
+      final validKeys = books.map((b) => _statusKey(b.subjectId, b.id)).toSet();
       for (final key in existing.keys.map((k) => k.toString())) {
-        final intKey = int.tryParse(key);
-        if (intKey == null || !bookIds.contains(intKey)) {
+        if (!validKeys.contains(key)) {
           result['removed'] = (result['removed'] ?? 0) + 1;
         }
       }

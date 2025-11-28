@@ -7,7 +7,6 @@ import '../../utils/constants.dart';
 import '../../utils/theme.dart';
 import 'lesson_form_screen.dart';
 import '../scanner/scanner_screen.dart';
-import '../books/qr_code_screen.dart';
 
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
@@ -163,253 +162,34 @@ class _TimetableScreenState extends State<TimetableScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               FloatingActionButton.small(
+                heroTag: 'scan_day',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ScannerScreen()),
+                  );
+                },
+                child: const Icon(Icons.qr_code_scanner),
+                tooltip: 'Scan / Manage books for this day',
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton.small(
+                heroTag: 'regular',
+                onPressed: () => _addLesson(dayOfWeek),
+                child: const Icon(Icons.add),
+                tooltip: 'Add Lesson',
+              ),
+              const SizedBox(height: 8),
+              FloatingActionButton.small(
                 heroTag: 'special',
                 onPressed: () => _addSpecialLesson(_selectedDay!),
                 child: const Icon(Icons.star),
                 tooltip: 'Add Special Lesson',
               ),
-              const SizedBox(height: 8),
-              FloatingActionButton.extended(
-                heroTag: 'regular',
-                onPressed: () => _addLesson(dayOfWeek),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Lesson'),
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton.small(
-                heroTag: 'scan_day',
-                onPressed: () => _openDayBookManager(
-                  _selectedDay!,
-                  timetableService,
-                  subjectService,
-                ),
-                child: const Icon(Icons.qr_code_scanner),
-                tooltip: 'Scan / Manage books for this day',
-              ),
             ],
           ),
         ),
       ],
-    );
-  }
-
-  void _openDayBookManager(
-    DateTime day,
-    TimetableService timetableService,
-    SubjectService subjectService,
-  ) {
-    final lessons = timetableService.getLessonsForCalendarDate(day);
-    final subjectIds = lessons.map((l) => l.subjectId).toSet().toList();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) {
-        return Padding(
-          padding: MediaQuery.of(context).viewInsets,
-          child: Consumer<BookService>(
-            builder: (context, bookService, child) {
-              // ensure services have up-to-date data
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                bookService.refresh();
-                subjectService.refresh();
-              });
-
-              if (subjectIds.isEmpty) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Text('No subjects with lessons on this day'),
-                  ),
-                );
-              }
-
-              final subjects = subjectIds
-                  .map((id) => subjectService.getSubjectById(id))
-                  .whereType<Subject>()
-                  .toList();
-
-              return DraggableScrollableSheet(
-                expand: false,
-                initialChildSize: 0.6,
-                minChildSize: 0.3,
-                maxChildSize: 0.95,
-                builder: (context, scrollController) => ListView.builder(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: subjects.length,
-                  itemBuilder: (context, idx) {
-                    final subj = subjects[idx];
-                    final books = bookService.getBooksForSubject(subj.id);
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: subj.colorValue != null
-                                      ? Color(subj.colorValue!)
-                                      : AppColors.getDefaultSubjectColor(
-                                          subj.id,
-                                        ),
-                                  child: Text(
-                                    subj.name.isNotEmpty ? subj.name[0] : '?',
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    subj.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.qr_code_scanner),
-                                  tooltip: 'Open scanner',
-                                  onPressed: () async {
-                                    // Push full scanner screen; it will update statuses itself
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const ScannerScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (books.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                child: Text('No books for this subject'),
-                              )
-                            else
-                              ...books.map((b) {
-                                final status = bookService.getBookStatus(b.id);
-                                Color statusColor;
-                                String statusLabel;
-                                switch (status) {
-                                  case 'missing':
-                                    statusColor = Colors.red.shade400;
-                                    statusLabel = 'Missing';
-                                    break;
-                                  case 'handed_in':
-                                    statusColor = Colors.orange.shade700;
-                                    statusLabel = 'Handed in';
-                                    break;
-                                  default:
-                                    statusColor = Colors.green.shade600;
-                                    statusLabel = 'Available';
-                                }
-
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  leading: const Icon(Icons.qr_code),
-                                  title: Text('Book ${b.id}'),
-                                  subtitle: Text(
-                                    subj.generateCode(b.id),
-                                    style: const TextStyle(
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        margin: const EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color: statusColor.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          border: Border.all(
-                                            color: statusColor.withOpacity(0.9),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          statusLabel,
-                                          style: TextStyle(
-                                            color: statusColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.qr_code_2),
-                                        tooltip: 'View QR',
-                                        onPressed: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => QrCodeScreen(
-                                              subject: subj,
-                                              bookId: b.id,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      PopupMenuButton<String>(
-                                        onSelected: (value) async {
-                                          if (value == 'missing')
-                                            await bookService.markBookMissing(
-                                              b.id,
-                                            );
-                                          if (value == 'handed_in')
-                                            await bookService.markBookHandedIn(
-                                              b.id,
-                                            );
-                                          if (value == 'available')
-                                            await bookService.setBookStatus(
-                                              b.id,
-                                              'available',
-                                            );
-                                          // Refresh UI
-                                          setState(() {});
-                                        },
-                                        itemBuilder: (_) => [
-                                          const PopupMenuItem(
-                                            value: 'available',
-                                            child: Text('Mark Available'),
-                                          ),
-                                          const PopupMenuItem(
-                                            value: 'missing',
-                                            child: Text('Mark Missing'),
-                                          ),
-                                          const PopupMenuItem(
-                                            value: 'handed_in',
-                                            child: Text('Mark Handed In'),
-                                          ),
-                                        ],
-                                        icon: const Icon(Icons.more_vert),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
-        );
-      },
     );
   }
 
@@ -816,36 +596,6 @@ class _LessonCard extends StatelessWidget {
                       ),
                   ],
                 ),
-              ),
-
-              // Actions
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') onEdit();
-                  if (value == 'delete') onDelete();
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ],
           ),

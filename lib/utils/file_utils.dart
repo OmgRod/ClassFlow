@@ -1,51 +1,49 @@
 import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
+
 /// Utility class for file and directory operations.
-/// Uses the app's directory (relative to the executable) for storage.
+/// Uses a writable app-specific directory for storage.
 class FileUtils {
   static Directory? _appDirectory;
 
-  /// Gets the app directory path. On desktop platforms, this is a 'data' 
-  /// subdirectory next to the executable. Creates the directory if it doesn't exist.
+  /// Gets the app directory path.
+  ///
+  /// On mobile/desktop, this is based on the OS-provided
+  /// application documents directory. On web, this should
+  /// not be called.
   static Future<Directory> getAppDirectory() async {
     // Use cached directory if available and still exists
     if (_appDirectory != null && await _appDirectory!.exists()) {
       return _appDirectory!;
     }
 
-    // Get directory based on executable location
-    final executablePath = Platform.resolvedExecutable;
-    final executableDir = File(executablePath).parent.path;
-    
-    // Use a 'data' subdirectory within the app directory
-    final appDataPath = '$executableDir${Platform.pathSeparator}data';
-    
-    final dir = Directory(appDataPath);
-    
-    // Try to create the directory - if this fails (permissions), 
-    // fall back to current working directory
+    Directory baseDir;
     try {
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-      }
-      _appDirectory = dir;
-      return dir;
-    } catch (e) {
-      // Fallback to current working directory if executable directory is not writable
-      final fallbackPath = '${Directory.current.path}${Platform.pathSeparator}detention_safe_data';
-      final fallbackDir = Directory(fallbackPath);
-      if (!await fallbackDir.exists()) {
-        await fallbackDir.create(recursive: true);
-      }
-      _appDirectory = fallbackDir;
-      return fallbackDir;
+      // Use path_provider so we always get a writable location
+      baseDir = await getApplicationDocumentsDirectory();
+    } catch (_) {
+      // Fallback to current working directory if anything goes wrong
+      baseDir = Directory.current;
     }
+
+    final dir = Directory(
+      '${baseDir.path}${Platform.pathSeparator}detention_safe_data',
+    );
+
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    _appDirectory = dir;
+    return dir;
   }
 
   /// Gets the exports subdirectory within the app directory.
   static Future<Directory> getExportsDirectory() async {
     final appDir = await getAppDirectory();
-    final exportsDir = Directory('${appDir.path}${Platform.pathSeparator}exports');
+    final exportsDir = Directory(
+      '${appDir.path}${Platform.pathSeparator}exports',
+    );
     if (!await exportsDir.exists()) {
       await exportsDir.create(recursive: true);
     }
