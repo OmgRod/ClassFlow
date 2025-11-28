@@ -1,16 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
-// Hive import not needed here; use DatabaseService.specialLessonsBox
 import '../models/models.dart';
 import 'database_service.dart';
 
 class TimetableService extends ChangeNotifier {
   List<Lesson> _lessons = [];
-  List<LessonTemplate> _templates = [];
   final Uuid _uuid = const Uuid();
 
   List<Lesson> get lessons => _lessons;
-  List<LessonTemplate> get templates => _templates;
 
   TimetableService() {
     _loadData();
@@ -31,7 +28,6 @@ class TimetableService extends ChangeNotifier {
 
   void _loadData() {
     _lessons = List<Lesson>.from(DatabaseService.lessons);
-    _templates = List<LessonTemplate>.from(DatabaseService.templates);
     notifyListeners();
   }
 
@@ -130,11 +126,6 @@ class TimetableService extends ChangeNotifier {
       globalBase = DateTime.tryParse(iso);
     }
 
-    // collect special lessons for the date (they override regular lessons)
-    final specialForDate = DatabaseService.specialLessons
-        .where((s) => isSameDate(s.date, date))
-        .toList();
-
     return _lessons.where((l) {
       // must match weekday
       if (l.dayOfWeek != date.weekday) return false;
@@ -149,20 +140,6 @@ class TimetableService extends ChangeNotifier {
       // respect recurrence rules (occursOn handles everyWeek, everyTwoWeeks, custom)
       if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase))
         return false;
-
-      // if a special lesson explicitly overrides this lesson, exclude it
-      if (specialForDate.any(
-        (s) => s.originalLessonId != null && s.originalLessonId == l.id,
-      )) {
-        return false;
-      }
-
-      // if a special lesson overlaps and targets same subject, treat it as overridden
-      if (specialForDate.any(
-        (s) => s.subjectId == l.subjectId && lessonsOverlapSpecial(l, s),
-      )) {
-        return false;
-      }
 
       return true;
     }).toList()..sort((a, b) {
@@ -196,58 +173,6 @@ class TimetableService extends ChangeNotifier {
         final bMinutes = b.startHour * 60 + b.startMinute;
         return aMinutes.compareTo(bMinutes);
       });
-  }
-
-  /// Get special lessons for a specific date
-  List<SpecialLesson> getSpecialLessonsForDate(DateTime date) {
-    try {
-      return DatabaseService.specialLessons
-          .where((s) => isSameDate(s.date, date))
-          .toList()
-        ..sort((a, b) {
-          final aMinutes = a.startHour * 60 + a.startMinute;
-          final bMinutes = b.startHour * 60 + b.startMinute;
-          return aMinutes.compareTo(bMinutes);
-        });
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Add a special lesson for a specific date
-  Future<SpecialLesson> addSpecialLesson({
-    required String id,
-    required DateTime date,
-    required int subjectId,
-    required int startHour,
-    required int startMinute,
-    required int endHour,
-    required int endMinute,
-    String? originalLessonId,
-    String? notes,
-  }) async {
-    final special = SpecialLesson(
-      id: id,
-      date: date,
-      subjectId: subjectId,
-      startHour: startHour,
-      startMinute: startMinute,
-      endHour: endHour,
-      endMinute: endMinute,
-      originalLessonId: originalLessonId,
-      notes: notes,
-    );
-    DatabaseService.specialLessons.removeWhere((s) => s.id == special.id);
-    DatabaseService.specialLessons.add(special);
-    await DatabaseService.save();
-    _loadData();
-    return special;
-  }
-
-  Future<void> deleteSpecialLesson(String id) async {
-    DatabaseService.specialLessons.removeWhere((s) => s.id == id);
-    await DatabaseService.save();
-    _loadData();
   }
 
   /// Get all lessons for a subject
@@ -291,84 +216,6 @@ class TimetableService extends ChangeNotifier {
         weekNumber: toWeekNumber,
       );
     }
-  }
-
-  // ============== TEMPLATE METHODS ==============
-
-  /// Add a new template
-  Future<LessonTemplate> addTemplate({
-    required String name,
-    required int startHour,
-    required int startMinute,
-    required int endHour,
-    required int endMinute,
-    String? description,
-  }) async {
-    final template = LessonTemplate(
-      id: _uuid.v4(),
-      name: name,
-      startHour: startHour,
-      startMinute: startMinute,
-      endHour: endHour,
-      endMinute: endMinute,
-      description: description,
-    );
-    DatabaseService.templates.removeWhere((t) => t.id == template.id);
-    DatabaseService.templates.add(template);
-    await DatabaseService.save();
-    _loadData();
-    return template;
-  }
-
-  /// Update an existing template
-  Future<void> updateTemplate(LessonTemplate template) async {
-    final index = DatabaseService.templates.indexWhere(
-      (t) => t.id == template.id,
-    );
-    if (index != -1) {
-      DatabaseService.templates[index] = template;
-    } else {
-      DatabaseService.templates.add(template);
-    }
-    await DatabaseService.save();
-    _loadData();
-  }
-
-  /// Delete a template
-  Future<void> deleteTemplate(String id) async {
-    DatabaseService.templates.removeWhere((t) => t.id == id);
-    await DatabaseService.save();
-    _loadData();
-  }
-
-  /// Get template by ID
-  LessonTemplate? getTemplateById(String id) {
-    try {
-      return _templates.firstWhere((t) => t.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  /// Create a lesson from a template
-  Future<Lesson> createLessonFromTemplate({
-    required LessonTemplate template,
-    required int subjectId,
-    required int dayOfWeek,
-    RecurrenceType recurrenceType = RecurrenceType.everyWeek,
-    int weekNumber = 0,
-  }) async {
-    return addLesson(
-      subjectId: subjectId,
-      dayOfWeek: dayOfWeek,
-      startHour: template.startHour,
-      startMinute: template.startMinute,
-      endHour: template.endHour,
-      endMinute: template.endMinute,
-      recurrenceType: recurrenceType,
-      templateId: template.id,
-      weekNumber: weekNumber,
-    );
   }
 
   /// Refresh data from database

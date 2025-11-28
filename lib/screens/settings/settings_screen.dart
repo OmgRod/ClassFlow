@@ -332,34 +332,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         };
       }).toList();
 
-      // Templates
-      payload['templates'] = DatabaseService.templates.map((t) {
-        return {
-          'id': t.id,
-          'name': t.name,
-          'startHour': t.startHour,
-          'startMinute': t.startMinute,
-          'endHour': t.endHour,
-          'endMinute': t.endMinute,
-          'description': t.description,
-        };
-      }).toList();
-
-      // Special lessons
-      payload['special_lessons'] = DatabaseService.specialLessons.map((s) {
-        return {
-          'id': s.id,
-          'date': s.date.toIso8601String(),
-          'subjectId': s.subjectId,
-          'startHour': s.startHour,
-          'startMinute': s.startMinute,
-          'endHour': s.endHour,
-          'endMinute': s.endMinute,
-          'originalLessonId': s.originalLessonId,
-          'notes': s.notes,
-        };
-      }).toList();
-
       // Settings
       payload['settings'] = Map<String, dynamic>.from(DatabaseService.settings);
 
@@ -636,12 +608,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Map<String, dynamic> payload =
           json.decode(content) as Map<String, dynamic>;
 
-      // Clear existing in-memory data
+      // Clear existing in-memory data (excluding templates and special lessons)
       DatabaseService.subjects.clear();
       DatabaseService.books.clear();
       DatabaseService.lessons.clear();
-      DatabaseService.templates.clear();
-      DatabaseService.specialLessons.clear();
 
       // Restore subjects
       if (payload['subjects'] is List) {
@@ -671,22 +641,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
-      // Templates
-      if (payload['templates'] is List) {
-        for (final item in (payload['templates'] as List)) {
-          final t = LessonTemplate(
-            id: item['id'] as String,
-            name: item['name'] as String,
-            startHour: item['startHour'] as int,
-            startMinute: item['startMinute'] as int,
-            endHour: item['endHour'] as int,
-            endMinute: item['endMinute'] as int,
-            description: item['description'] as String?,
-          );
-          DatabaseService.templates.add(t);
-        }
-      }
-
       // Lessons
       if (payload['lessons'] is List) {
         for (final item in (payload['lessons'] as List)) {
@@ -712,23 +666,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
-      // Special lessons
-      if (payload['special_lessons'] is List) {
-        for (final item in (payload['special_lessons'] as List)) {
-          final s = SpecialLesson(
-            id: item['id'] as String,
-            date: DateTime.parse(item['date'] as String),
-            subjectId: item['subjectId'] as int,
-            startHour: item['startHour'] as int,
-            startMinute: item['startMinute'] as int,
-            endHour: item['endHour'] as int,
-            endMinute: item['endMinute'] as int,
-            originalLessonId: item['originalLessonId'] as String?,
-            notes: item['notes'] as String?,
-          );
-          DatabaseService.specialLessons.add(s);
-        }
-      }
+      // Templates and special lessons are no longer imported here
 
       // Settings
       if (payload['settings'] is Map) {
@@ -799,12 +737,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Map<String, dynamic> payload =
           json.decode(content) as Map<String, dynamic>;
 
-      // Clear existing in-memory data
+      // Clear existing in-memory data (excluding templates and special lessons)
       DatabaseService.subjects.clear();
       DatabaseService.books.clear();
       DatabaseService.lessons.clear();
-      DatabaseService.templates.clear();
-      DatabaseService.specialLessons.clear();
 
       // Restore subjects
       if (payload['subjects'] is List) {
@@ -834,22 +770,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
-      // Templates
-      if (payload['templates'] is List) {
-        for (final item in (payload['templates'] as List)) {
-          final t = LessonTemplate(
-            id: item['id'] as String,
-            name: item['name'] as String,
-            startHour: item['startHour'] as int,
-            startMinute: item['startMinute'] as int,
-            endHour: item['endHour'] as int,
-            endMinute: item['endMinute'] as int,
-            description: item['description'] as String?,
-          );
-          DatabaseService.templates.add(t);
-        }
-      }
-
       // Lessons
       if (payload['lessons'] is List) {
         for (final item in (payload['lessons'] as List)) {
@@ -875,23 +795,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
-      // Special lessons
-      if (payload['special_lessons'] is List) {
-        for (final item in (payload['special_lessons'] as List)) {
-          final s = SpecialLesson(
-            id: item['id'] as String,
-            date: DateTime.parse(item['date'] as String),
-            subjectId: item['subjectId'] as int,
-            startHour: item['startHour'] as int,
-            startMinute: item['startMinute'] as int,
-            endHour: item['endHour'] as int,
-            endMinute: item['endMinute'] as int,
-            originalLessonId: item['originalLessonId'] as String?,
-            notes: item['notes'] as String?,
-          );
-          DatabaseService.specialLessons.add(s);
-        }
-      }
+      // Templates and special lessons are no longer imported here
 
       // Settings
       if (payload['settings'] is Map) {

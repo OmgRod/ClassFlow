@@ -20,8 +20,6 @@ class DatabaseService {
   static final List<Subject> subjects = [];
   static final List<Book> books = [];
   static final List<Lesson> lessons = [];
-  static final List<LessonTemplate> templates = [];
-  static final List<SpecialLesson> specialLessons = [];
   static final Map<String, dynamic> settings = {};
 
   /// Initialize the JSON database by loading from disk or
@@ -47,7 +45,7 @@ class DatabaseService {
 
       _initialized = true;
       debugPrint(
-        'DatabaseService(JSON): initialized subjects=${subjects.length}, books=${books.length}, lessons=${lessons.length}, templates=${templates.length}, specialLessons=${specialLessons.length}, settingsKeys=${settings.keys.length}',
+        'DatabaseService(JSON): initialized subjects=${subjects.length}, books=${books.length}, lessons=${lessons.length}, settingsKeys=${settings.keys.length}',
       );
     } catch (e, st) {
       debugPrint('DatabaseService(JSON).initialize() failed: $e\n$st');
@@ -79,8 +77,6 @@ class DatabaseService {
     subjects.clear();
     books.clear();
     lessons.clear();
-    templates.clear();
-    specialLessons.clear();
     settings.clear();
     await save();
   }
@@ -110,22 +106,6 @@ class DatabaseService {
         ),
       );
 
-    templates
-      ..clear()
-      ..addAll(
-        (data['lessonTemplates'] as List<dynamic>? ?? []).map(
-          (e) => LessonTemplate.fromJson(e as Map<String, dynamic>),
-        ),
-      );
-
-    specialLessons
-      ..clear()
-      ..addAll(
-        (data['specialLessons'] as List<dynamic>? ?? []).map(
-          (e) => SpecialLesson.fromJson(e as Map<String, dynamic>),
-        ),
-      );
-
     settings
       ..clear()
       ..addAll((data['settings'] as Map<String, dynamic>? ?? {}));
@@ -136,8 +116,6 @@ class DatabaseService {
       'subjects': subjects.map((s) => s.toJson()).toList(),
       'books': books.map((b) => b.toJson()).toList(),
       'lessons': lessons.map((l) => l.toJson()).toList(),
-      'lessonTemplates': templates.map((t) => t.toJson()).toList(),
-      'specialLessons': specialLessons.map((s) => s.toJson()).toList(),
       'settings': settings,
     };
   }

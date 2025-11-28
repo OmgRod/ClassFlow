@@ -33,7 +33,6 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
   late int _weekNumber;
   late TextEditingController _notesController;
 
-  LessonTemplate? _selectedTemplate;
   bool _isLoading = false;
 
   bool get isEditing => widget.lesson != null;
@@ -89,7 +88,6 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
       body: Consumer2<SubjectService, TimetableService>(
         builder: (context, subjectService, timetableService, child) {
           final subjects = subjectService.subjects;
-          final templates = timetableService.templates;
 
           // Set default subject if not editing and subjects available
           if (!isEditing && _selectedSubjectId == -1 && subjects.isNotEmpty) {
@@ -128,50 +126,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Template selector (if templates exist)
-                if (templates.isNotEmpty && !isEditing) ...[
-                  Text(
-                    'Use Template',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<LessonTemplate?>(
-                    value: _selectedTemplate,
-                    decoration: const InputDecoration(
-                      hintText: 'Select a template (optional)',
-                    ),
-                    items: [
-                      const DropdownMenuItem(
-                        value: null,
-                        child: Text('No template'),
-                      ),
-                      ...templates.map(
-                        (t) => DropdownMenuItem(
-                          value: t,
-                          child: Text(
-                            '${t.name} (${t.formattedStartTime}-${t.formattedEndTime})',
-                          ),
-                        ),
-                      ),
-                    ],
-                    onChanged: (template) {
-                      setState(() {
-                        _selectedTemplate = template;
-                        if (template != null) {
-                          _startTime = TimeOfDay(
-                            hour: template.startHour,
-                            minute: template.startMinute,
-                          );
-                          _endTime = TimeOfDay(
-                            hour: template.endHour,
-                            minute: template.endMinute,
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                ],
+                // Template selector removed
 
                 // Subject selector
                 Text('Subject', style: Theme.of(context).textTheme.titleMedium),
@@ -542,7 +497,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
               : null,
           weekNumber: _weekNumber,
           notes: _notesController.text.isEmpty ? null : _notesController.text,
-          templateId: _selectedTemplate?.id,
+          templateId: null,
         );
       }
 

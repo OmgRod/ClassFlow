@@ -95,9 +95,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
     final dayOfWeek = _selectedDay!.weekday;
     final lessons = timetableService.getLessonsForCalendarDate(_selectedDay!);
-    final specialLessons = timetableService.getSpecialLessonsForDate(
-      _selectedDay!,
-    );
 
     if (lessons.isEmpty) {
       return _buildEmptyDayView(dayOfWeek);
@@ -105,38 +102,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
     return Stack(
       children: [
-        if (specialLessons.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Special lessons for this date',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ...specialLessons.map((s) {
-                  final subject = subjectService.getSubjectById(s.subjectId);
-                  return Card(
-                    color: Colors.yellow.shade50,
-                    child: ListTile(
-                      title: Text(subject?.name ?? 'Unknown Subject'),
-                      subtitle: Text(
-                        '${s.startHour.toString().padLeft(2, '0')}:${s.startMinute.toString().padLeft(2, '0')} - ${s.endHour.toString().padLeft(2, '0')}:${s.endMinute.toString().padLeft(2, '0')}',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () =>
-                            timetableService.deleteSpecialLesson(s.id),
-                      ),
-                    ),
-                  );
-                }).toList(),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
         ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: lessons.length,
@@ -178,13 +143,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 onPressed: () => _addLesson(dayOfWeek),
                 child: const Icon(Icons.add),
                 tooltip: 'Add Lesson',
-              ),
-              const SizedBox(height: 8),
-              FloatingActionButton.small(
-                heroTag: 'special',
-                onPressed: () => _addSpecialLesson(_selectedDay!),
-                child: const Icon(Icons.star),
-                tooltip: 'Add Special Lesson',
               ),
             ],
           ),
@@ -382,88 +340,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
             child: const Text('Delete'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _addSpecialLesson(DateTime forDate) {
-    final timetableService = context.read<TimetableService>();
-    final subjectService = context.read<SubjectService>();
-    int selectedSubjectId = subjectService.subjects.isNotEmpty
-        ? subjectService.subjects.first.id
-        : 0;
-    TimeOfDay start = const TimeOfDay(hour: 9, minute: 0);
-    TimeOfDay end = const TimeOfDay(hour: 10, minute: 0);
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Add Special Lesson'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButton<int>(
-                value: selectedSubjectId,
-                items: subjectService.subjects
-                    .map(
-                      (s) => DropdownMenuItem(value: s.id, child: Text(s.name)),
-                    )
-                    .toList(),
-                onChanged: (v) =>
-                    setState(() => selectedSubjectId = v ?? selectedSubjectId),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () async {
-                      final t = await showTimePicker(
-                        context: context,
-                        initialTime: start,
-                      );
-                      if (t != null) setState(() => start = t);
-                    },
-                    child: Text('Start: ${start.format(context)}'),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () async {
-                      final t = await showTimePicker(
-                        context: context,
-                        initialTime: end,
-                      );
-                      if (t != null) setState(() => end = t);
-                    },
-                    child: Text('End: ${end.format(context)}'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final id = DateTime.now().microsecondsSinceEpoch.toString();
-                timetableService.addSpecialLesson(
-                  id: id,
-                  date: DateTime(forDate.year, forDate.month, forDate.day),
-                  subjectId: selectedSubjectId,
-                  startHour: start.hour,
-                  startMinute: start.minute,
-                  endHour: end.hour,
-                  endMinute: end.minute,
-                );
-                Navigator.pop(context);
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        ),
       ),
     );
   }
