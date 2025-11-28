@@ -252,7 +252,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
       }
 
       // Save to configured export directory (or app's QR codes directory)
-      String? custom = DatabaseService.settingsBox.get('exportPath') as String?;
+      final custom = DatabaseService.settings['exportPath'] as String?;
       Directory directory;
       if (custom != null && custom.isNotEmpty) {
         directory = Directory(custom);

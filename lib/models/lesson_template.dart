@@ -1,28 +1,10 @@
-import 'package:hive/hive.dart';
-
-part 'lesson_template.g.dart';
-
-@HiveType(typeId: 4)
-class LessonTemplate extends HiveObject {
-  @HiveField(0)
+class LessonTemplate {
   String id; // UUID
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   int startHour;
-
-  @HiveField(3)
   int startMinute;
-
-  @HiveField(4)
   int endHour;
-
-  @HiveField(5)
   int endMinute;
-
-  @HiveField(6)
   String? description;
 
   LessonTemplate({
@@ -72,5 +54,29 @@ class LessonTemplate extends HiveObject {
   @override
   String toString() {
     return 'LessonTemplate(id: $id, name: $name, $formattedStartTime-$formattedEndTime)';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'startHour': startHour,
+      'startMinute': startMinute,
+      'endHour': endHour,
+      'endMinute': endMinute,
+      'description': description,
+    };
+  }
+
+  factory LessonTemplate.fromJson(Map<String, dynamic> json) {
+    return LessonTemplate(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      startHour: json['startHour'] as int,
+      startMinute: json['startMinute'] as int,
+      endHour: json['endHour'] as int,
+      endMinute: json['endMinute'] as int,
+      description: json['description'] as String?,
+    );
   }
 }

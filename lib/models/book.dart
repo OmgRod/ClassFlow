@@ -1,19 +1,7 @@
-import 'package:hive/hive.dart';
-
-part 'book.g.dart';
-
-@HiveType(typeId: 1)
-class Book extends HiveObject {
-  @HiveField(0)
+class Book {
   int id;
-
-  @HiveField(1)
   int subjectId;
-
-  @HiveField(2)
   String? description;
-
-  @HiveField(3)
   DateTime createdAt;
 
   Book({
@@ -46,5 +34,25 @@ class Book extends HiveObject {
   @override
   String toString() {
     return 'Book(id: $id, subjectId: $subjectId, description: $description)';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'subjectId': subjectId,
+      'description': description,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  factory Book.fromJson(Map<String, dynamic> json) {
+    return Book(
+      id: json['id'] as int,
+      subjectId: json['subjectId'] as int,
+      description: json['description'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+    );
   }
 }

@@ -30,8 +30,8 @@ class TimetableService extends ChangeNotifier {
   }
 
   void _loadData() {
-    _lessons = DatabaseService.lessonsBox.values.toList();
-    _templates = DatabaseService.templatesBox.values.toList();
+    _lessons = List<Lesson>.from(DatabaseService.lessons);
+    _templates = List<LessonTemplate>.from(DatabaseService.templates);
     notifyListeners();
   }
 
@@ -67,20 +67,30 @@ class TimetableService extends ChangeNotifier {
       notes: notes,
       weekNumber: weekNumber,
     );
-    await DatabaseService.lessonsBox.put(lesson.id, lesson);
+    DatabaseService.lessons.removeWhere((l) => l.id == lesson.id);
+    DatabaseService.lessons.add(lesson);
+    await DatabaseService.save();
     _loadData();
     return lesson;
   }
 
   /// Update an existing lesson
   Future<void> updateLesson(Lesson lesson) async {
-    await DatabaseService.lessonsBox.put(lesson.id, lesson);
+    final index =
+        DatabaseService.lessons.indexWhere((l) => l.id == lesson.id);
+    if (index != -1) {
+      DatabaseService.lessons[index] = lesson;
+    } else {
+      DatabaseService.lessons.add(lesson);
+    }
+    await DatabaseService.save();
     _loadData();
   }
 
   /// Delete a lesson
   Future<void> deleteLesson(String id) async {
-    await DatabaseService.lessonsBox.delete(id);
+    DatabaseService.lessons.removeWhere((l) => l.id == id);
+    await DatabaseService.save();
     _loadData();
   }
 
@@ -113,22 +123,16 @@ class TimetableService extends ChangeNotifier {
   /// Get lessons for a specific calendar date (respects recurrence rules)
   List<Lesson> getLessonsForCalendarDate(DateTime date, {int? weekNumber}) {
     // Read global invert setting and global week1 base from settings box if available
-    bool invert = false;
+    bool invert =
+        (DatabaseService.settings['invertWeekParity'] as bool?) ?? false;
     DateTime? globalBase;
-    try {
-      invert =
-          DatabaseService.settingsBox.get(
-                'invertWeekParity',
-                defaultValue: false,
-              )
-              as bool;
-      final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
-      if (iso != null) globalBase = DateTime.tryParse(iso);
-    } catch (_) {}
+    final iso = DatabaseService.settings['week1StartDate'] as String?;
+    if (iso != null) {
+      globalBase = DateTime.tryParse(iso);
+    }
 
     // collect special lessons for the date (they override regular lessons)
-    final specialForDate = DatabaseService.specialLessonsBox.values
-        .whereType<SpecialLesson>()
+    final specialForDate = DatabaseService.specialLessons
         .where((s) => isSameDate(s.date, date))
         .toList();
 
@@ -171,19 +175,13 @@ class TimetableService extends ChangeNotifier {
 
   /// Get lessons for a specific date
   List<Lesson> getLessonsForDate(DateTime date) {
-    // Use global settings for invert and globalBase if available
-    bool invert = false;
+    bool invert =
+        (DatabaseService.settings['invertWeekParity'] as bool?) ?? false;
     DateTime? globalBase;
-    try {
-      invert =
-          DatabaseService.settingsBox.get(
-                'invertWeekParity',
-                defaultValue: false,
-              )
-              as bool;
-      final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
-      if (iso != null) globalBase = DateTime.tryParse(iso);
-    } catch (_) {}
+    final iso = DatabaseService.settings['week1StartDate'] as String?;
+    if (iso != null) {
+      globalBase = DateTime.tryParse(iso);
+    }
 
     return _lessons
         .where(
@@ -204,9 +202,7 @@ class TimetableService extends ChangeNotifier {
   /// Get special lessons for a specific date
   List<SpecialLesson> getSpecialLessonsForDate(DateTime date) {
     try {
-      final box = DatabaseService.specialLessonsBox;
-      return box.values
-          .whereType<SpecialLesson>()
+      return DatabaseService.specialLessons
           .where((s) => isSameDate(s.date, date))
           .toList()
         ..sort((a, b) {
@@ -231,7 +227,6 @@ class TimetableService extends ChangeNotifier {
     String? originalLessonId,
     String? notes,
   }) async {
-    final box = DatabaseService.specialLessonsBox;
     final special = SpecialLesson(
       id: id,
       date: date,
@@ -243,14 +238,16 @@ class TimetableService extends ChangeNotifier {
       originalLessonId: originalLessonId,
       notes: notes,
     );
-    await box.put(special.id, special);
+    DatabaseService.specialLessons.removeWhere((s) => s.id == special.id);
+    DatabaseService.specialLessons.add(special);
+    await DatabaseService.save();
     _loadData();
     return special;
   }
 
   Future<void> deleteSpecialLesson(String id) async {
-    final box = DatabaseService.specialLessonsBox;
-    await box.delete(id);
+    DatabaseService.specialLessons.removeWhere((s) => s.id == id);
+    await DatabaseService.save();
     _loadData();
   }
 
@@ -317,20 +314,30 @@ class TimetableService extends ChangeNotifier {
       endMinute: endMinute,
       description: description,
     );
-    await DatabaseService.templatesBox.put(template.id, template);
+    DatabaseService.templates.removeWhere((t) => t.id == template.id);
+    DatabaseService.templates.add(template);
+    await DatabaseService.save();
     _loadData();
     return template;
   }
 
   /// Update an existing template
   Future<void> updateTemplate(LessonTemplate template) async {
-    await DatabaseService.templatesBox.put(template.id, template);
+    final index =
+        DatabaseService.templates.indexWhere((t) => t.id == template.id);
+    if (index != -1) {
+      DatabaseService.templates[index] = template;
+    } else {
+      DatabaseService.templates.add(template);
+    }
+    await DatabaseService.save();
     _loadData();
   }
 
   /// Delete a template
   Future<void> deleteTemplate(String id) async {
-    await DatabaseService.templatesBox.delete(id);
+    DatabaseService.templates.removeWhere((t) => t.id == id);
+    await DatabaseService.save();
     _loadData();
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'services/services.dart';
 import 'screens/screens.dart';
 import 'utils/theme.dart';
@@ -26,29 +25,22 @@ class DetentionSafeApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BookService()),
         ChangeNotifierProvider(create: (_) => TimetableService()),
       ],
-      child: ValueListenableBuilder(
-        valueListenable: DatabaseService.settingsBox.listenable(),
-        builder: (context, box, _) {
-          final modeStr =
-              DatabaseService.settingsBox.get(
-                    'themeMode',
-                    defaultValue: 'system',
-                  )
-                  as String;
-          ThemeMode mode = ThemeMode.system;
-          if (modeStr == 'light') mode = ThemeMode.light;
-          if (modeStr == 'dark') mode = ThemeMode.dark;
+      child: Builder(builder: (context) {
+        final modeStr =
+            (DatabaseService.settings['themeMode'] as String?) ?? 'system';
+        ThemeMode mode = ThemeMode.system;
+        if (modeStr == 'light') mode = ThemeMode.light;
+        if (modeStr == 'dark') mode = ThemeMode.dark;
 
-          return MaterialApp(
-            title: AppConstants.appName,
-            theme: AppTheme.lightTheme,
-            darkTheme: ThemeData.dark(),
-            themeMode: mode,
-            debugShowCheckedModeBanner: false,
-            home: const HomeScreen(),
-          );
-        },
-      ),
+        return MaterialApp(
+          title: AppConstants.appName,
+          theme: AppTheme.lightTheme,
+          darkTheme: ThemeData.dark(),
+          themeMode: mode,
+          debugShowCheckedModeBanner: false,
+          home: const HomeScreen(),
+        );
+      }),
     );
   }
 }

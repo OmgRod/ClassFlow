@@ -38,13 +38,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _loadSettings() {
     invertWeekParity =
-        DatabaseService.settingsBox.get('invertWeekParity', defaultValue: false)
-            as bool;
-    final iso = DatabaseService.settingsBox.get('week1StartDate') as String?;
+      (DatabaseService.settings['invertWeekParity'] as bool?) ?? false;
+    final iso = DatabaseService.settings['week1StartDate'] as String?;
     themeMode =
-        DatabaseService.settingsBox.get('themeMode', defaultValue: 'system')
-            as String;
-    exportPath = DatabaseService.settingsBox.get('exportPath') as String?;
+      (DatabaseService.settings['themeMode'] as String?) ?? 'system';
+    exportPath = DatabaseService.settings['exportPath'] as String?;
     if (iso != null) week1StartDate = DateTime.tryParse(iso);
     setState(() {});
   }
@@ -118,8 +116,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (mode == 'app') {
-                    DatabaseService.settingsBox.delete('exportPath');
+                    if (mode == 'app') {
+                    DatabaseService.settings.remove('exportPath');
+                    await DatabaseService.save();
                     setState(() => exportPath = null);
                     Navigator.of(ctx).pop(true);
                     return;
@@ -136,7 +135,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   try {
                     // If the path looks like a SAF tree URI (content://), store it directly
                     if (path.startsWith('content://')) {
-                      DatabaseService.settingsBox.put('exportPath', path);
+                      DatabaseService.settings['exportPath'] = path;
+                      await DatabaseService.save();
                       setState(() => exportPath = path);
                       Navigator.of(ctx).pop(true);
                       return;
@@ -153,7 +153,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     await test.writeAsString('ok');
                     await test.delete();
 
-                    DatabaseService.settingsBox.put('exportPath', path);
+                    DatabaseService.settings['exportPath'] = path;
+                    await DatabaseService.save();
                     setState(() => exportPath = path);
                     Navigator.of(ctx).pop(true);
                   } catch (e) {
@@ -183,24 +184,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (picked != null) {
       setState(() => week1StartDate = picked);
-      DatabaseService.settingsBox.put(
-        'week1StartDate',
-        picked.toIso8601String(),
-      );
+      DatabaseService.settings['week1StartDate'] = picked.toIso8601String();
+      await DatabaseService.save();
     }
   }
 
   void _setThemeMode(String mode) {
     setState(() => themeMode = mode);
-    DatabaseService.settingsBox.put('themeMode', mode);
+    DatabaseService.settings['themeMode'] = mode;
+    DatabaseService.save();
   }
 
   void _resetWeek1Reference() {
     setState(() {
       week1StartDate = null;
       invertWeekParity = false;
-      DatabaseService.settingsBox.delete('week1StartDate');
-      DatabaseService.settingsBox.put('invertWeekParity', false);
+      DatabaseService.settings.remove('week1StartDate');
+      DatabaseService.settings['invertWeekParity'] = false;
+      DatabaseService.save();
     });
   }
 
@@ -247,7 +248,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _resetExportPathQuick() async {
-    DatabaseService.settingsBox.delete('exportPath');
+    DatabaseService.settings.remove('exportPath');
+    await DatabaseService.save();
     setState(() => exportPath = null);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -273,7 +275,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _toggleInvert(bool v) {
     setState(() => invertWeekParity = v);
-    DatabaseService.settingsBox.put('invertWeekParity', v);
+    DatabaseService.settings['invertWeekParity'] = v;
+    DatabaseService.save();
   }
 
   Future<void> _exportData() async {
@@ -281,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Map<String, dynamic> payload = {};
 
       // Subjects
-      payload['subjects'] = DatabaseService.subjectsBox.values.map((s) {
+      payload['subjects'] = DatabaseService.subjects.map((s) {
         return {
           'id': s.id,
           'name': s.name,
@@ -291,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList();
 
       // Books
-      payload['books'] = DatabaseService.booksBox.values.map((b) {
+      payload['books'] = DatabaseService.books.map((b) {
         return {
           'id': b.id,
           'subjectId': b.subjectId,
@@ -301,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList();
 
       // Lessons
-      payload['lessons'] = DatabaseService.lessonsBox.values.map((l) {
+      payload['lessons'] = DatabaseService.lessons.map((l) {
         return {
           'id': l.id,
           'subjectId': l.subjectId,
@@ -320,7 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList();
 
       // Templates
-      payload['templates'] = DatabaseService.templatesBox.values.map((t) {
+      payload['templates'] = DatabaseService.templates.map((t) {
         return {
           'id': t.id,
           'name': t.name,
@@ -333,9 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }).toList();
 
       // Special lessons
-      final specialBox = DatabaseService.specialLessonsBox;
-      payload['special_lessons'] = specialBox.values
-          .whereType<SpecialLesson>()
+        payload['special_lessons'] = DatabaseService.specialLessons
           .map((s) {
             return {
               'id': s.id,
@@ -352,14 +353,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           .toList();
 
       // Settings
-      payload['settings'] = Map.fromEntries(
-        DatabaseService.settingsBox.keys.map(
-          (k) => MapEntry(k.toString(), DatabaseService.settingsBox.get(k)),
-        ),
-      );
+      payload['settings'] = Map<String, dynamic>.from(DatabaseService.settings);
 
       final jsonStr = const JsonEncoder.withIndent('  ').convert(payload);
-      String? custom = DatabaseService.settingsBox.get('exportPath') as String?;
+      String? custom = DatabaseService.settings['exportPath'] as String?;
       Directory dir;
       if (custom != null && custom.isNotEmpty) {
         dir = Directory(custom);
@@ -400,7 +397,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
                 if (uri != null && uri.isNotEmpty) {
                   // store the SAF tree URI for future exports and use it for this export
-                  DatabaseService.settingsBox.put('exportPath', uri);
+                  DatabaseService.settings['exportPath'] = uri;
+                  await DatabaseService.save();
                   custom = uri;
                   // use app exports directory as a local fallback path variable (we won't write to it when custom is a SAF URI)
                   dir = await FileUtils.getExportsDirectory();
@@ -630,12 +628,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Map<String, dynamic> payload =
           json.decode(content) as Map<String, dynamic>;
 
-      // Clear existing boxes
-      await DatabaseService.subjectsBox.clear();
-      await DatabaseService.booksBox.clear();
-      await DatabaseService.lessonsBox.clear();
-      await DatabaseService.templatesBox.clear();
-      await DatabaseService.specialLessonsBox.clear();
+      // Clear existing in-memory data
+      DatabaseService.subjects.clear();
+      DatabaseService.books.clear();
+      DatabaseService.lessons.clear();
+      DatabaseService.templates.clear();
+      DatabaseService.specialLessons.clear();
 
       // Restore subjects
       if (payload['subjects'] is List) {
@@ -646,7 +644,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             bookIds: List<int>.from(item['bookIds'] ?? []),
             colorValue: item['colorValue'] as int?,
           );
-          await DatabaseService.subjectsBox.put(s.id, s);
+          DatabaseService.subjects.add(s);
         }
       }
 
@@ -661,7 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? DateTime.parse(item['createdAt'] as String)
                 : DateTime.now(),
           );
-          await DatabaseService.booksBox.put(b.id, b);
+          DatabaseService.books.add(b);
         }
       }
 
@@ -677,7 +675,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             endMinute: item['endMinute'] as int,
             description: item['description'] as String?,
           );
-          await DatabaseService.templatesBox.put(t.id, t);
+          DatabaseService.templates.add(t);
         }
       }
 
@@ -702,13 +700,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             notes: item['notes'] as String?,
             weekNumber: item['weekNumber'] as int? ?? 0,
           );
-          await DatabaseService.lessonsBox.put(l.id, l);
+          DatabaseService.lessons.add(l);
         }
       }
 
       // Special lessons
       if (payload['special_lessons'] is List) {
-        final box = DatabaseService.specialLessonsBox;
         for (final item in (payload['special_lessons'] as List)) {
           final s = SpecialLesson(
             id: item['id'] as String,
@@ -721,16 +718,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             originalLessonId: item['originalLessonId'] as String?,
             notes: item['notes'] as String?,
           );
-          await box.put(s.id, s);
+          DatabaseService.specialLessons.add(s);
         }
       }
 
       // Settings
       if (payload['settings'] is Map) {
-        for (final entry in (payload['settings'] as Map).entries) {
-          DatabaseService.settingsBox.put(entry.key.toString(), entry.value);
-        }
+        DatabaseService.settings
+          ..clear()
+          ..addAll(Map<String, dynamic>.from(payload['settings'] as Map));
       }
+
+      await DatabaseService.save();
 
       // Refresh UI
       setState(() {});
@@ -792,12 +791,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final Map<String, dynamic> payload =
           json.decode(content) as Map<String, dynamic>;
 
-      // Clear existing boxes
-      await DatabaseService.subjectsBox.clear();
-      await DatabaseService.booksBox.clear();
-      await DatabaseService.lessonsBox.clear();
-      await DatabaseService.templatesBox.clear();
-      await DatabaseService.specialLessonsBox.clear();
+      // Clear existing in-memory data
+      DatabaseService.subjects.clear();
+      DatabaseService.books.clear();
+      DatabaseService.lessons.clear();
+      DatabaseService.templates.clear();
+      DatabaseService.specialLessons.clear();
 
       // Restore subjects
       if (payload['subjects'] is List) {
@@ -808,7 +807,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             bookIds: List<int>.from(item['bookIds'] ?? []),
             colorValue: item['colorValue'] as int?,
           );
-          await DatabaseService.subjectsBox.put(s.id, s);
+          DatabaseService.subjects.add(s);
         }
       }
 
@@ -823,7 +822,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ? DateTime.parse(item['createdAt'] as String)
                 : DateTime.now(),
           );
-          await DatabaseService.booksBox.put(b.id, b);
+          DatabaseService.books.add(b);
         }
       }
 
@@ -839,7 +838,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             endMinute: item['endMinute'] as int,
             description: item['description'] as String?,
           );
-          await DatabaseService.templatesBox.put(t.id, t);
+          DatabaseService.templates.add(t);
         }
       }
 
@@ -864,13 +863,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             notes: item['notes'] as String?,
             weekNumber: item['weekNumber'] as int? ?? 0,
           );
-          await DatabaseService.lessonsBox.put(l.id, l);
+          DatabaseService.lessons.add(l);
         }
       }
 
       // Special lessons
       if (payload['special_lessons'] is List) {
-        final box = DatabaseService.specialLessonsBox;
         for (final item in (payload['special_lessons'] as List)) {
           final s = SpecialLesson(
             id: item['id'] as String,
@@ -883,16 +881,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             originalLessonId: item['originalLessonId'] as String?,
             notes: item['notes'] as String?,
           );
-          await box.put(s.id, s);
+          DatabaseService.specialLessons.add(s);
         }
       }
 
       // Settings
       if (payload['settings'] is Map) {
-        for (final entry in (payload['settings'] as Map).entries) {
-          DatabaseService.settingsBox.put(entry.key.toString(), entry.value);
-        }
+        DatabaseService.settings
+          ..clear()
+          ..addAll(Map<String, dynamic>.from(payload['settings'] as Map));
       }
+
+      await DatabaseService.save();
 
       // Refresh UI
       setState(() {});

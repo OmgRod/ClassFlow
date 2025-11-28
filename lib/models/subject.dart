@@ -1,19 +1,7 @@
-import 'package:hive/hive.dart';
-
-part 'subject.g.dart';
-
-@HiveType(typeId: 0)
-class Subject extends HiveObject {
-  @HiveField(0)
+class Subject {
   int id;
-
-  @HiveField(1)
   String name; // Full uppercase, no spaces
-
-  @HiveField(2)
   List<int> bookIds;
-
-  @HiveField(3)
   int? colorValue; // ARGB color value for GUI highlighting
 
   Subject({
@@ -60,5 +48,25 @@ class Subject extends HiveObject {
   @override
   String toString() {
     return 'Subject(id: $id, name: $name, bookIds: $bookIds, colorValue: $colorValue)';
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'bookIds': bookIds,
+      'colorValue': colorValue,
+    };
+  }
+
+  factory Subject.fromJson(Map<String, dynamic> json) {
+    return Subject(
+      id: json['id'] as int,
+      name: json['name'] as String,
+      bookIds: (json['bookIds'] as List<dynamic>? ?? [])
+          .map((e) => e as int)
+          .toList(),
+      colorValue: json['colorValue'] as int?,
+    );
   }
 }

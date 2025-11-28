@@ -20,7 +20,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   CalendarFormat _calendarFormat = CalendarFormat.week;
-  int _selectedWeekNumber = 0; // 0 = both weeks, 1 or 2 for specific week
 
   @override
   void initState() {
@@ -34,9 +33,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
       builder: (context, timetableService, subjectService, child) {
         return Column(
           children: [
-            // Week number selector
-            _buildWeekSelector(),
-
             // Calendar
             TableCalendar(
               firstDay: DateTime.utc(2020, 1, 1),
@@ -75,12 +71,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                 titleCentered: true,
               ),
               eventLoader: (day) {
-                return timetableService.getLessonsForCalendarDate(
-                  day,
-                  weekNumber: _selectedWeekNumber == 0
-                      ? null
-                      : _selectedWeekNumber,
-                );
+                return timetableService.getLessonsForCalendarDate(day);
               },
             ),
             const Divider(),
@@ -95,41 +86,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
     );
   }
 
-  Widget _buildWeekSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          const Text('Week: ', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('All'),
-            selected: _selectedWeekNumber == 0,
-            onSelected: (_) => setState(() => _selectedWeekNumber = 0),
-          ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Week 1'),
-            selected: _selectedWeekNumber == 1,
-            onSelected: (_) => setState(() => _selectedWeekNumber = 1),
-          ),
-          const SizedBox(width: 8),
-          ChoiceChip(
-            label: const Text('Week 2'),
-            selected: _selectedWeekNumber == 2,
-            onSelected: (_) => setState(() => _selectedWeekNumber = 2),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.copy),
-            tooltip: 'Copy Week',
-            onPressed: _showCopyWeekDialog,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLessonsList(
     TimetableService timetableService,
     SubjectService subjectService,
@@ -139,10 +95,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
     }
 
     final dayOfWeek = _selectedDay!.weekday;
-    final lessons = timetableService.getLessonsForCalendarDate(
-      _selectedDay!,
-      weekNumber: _selectedWeekNumber == 0 ? null : _selectedWeekNumber,
-    );
+    final lessons = timetableService.getLessonsForCalendarDate(_selectedDay!);
     final specialLessons = timetableService.getSpecialLessonsForDate(
       _selectedDay!,
     );
@@ -488,7 +441,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
       MaterialPageRoute(
         builder: (context) => LessonFormScreen(
           dayOfWeek: dayOfWeek,
-          weekNumber: _selectedWeekNumber == 0 ? 0 : _selectedWeekNumber,
+          weekNumber: 0,
         ),
       ),
     );
@@ -651,92 +604,6 @@ class _TimetableScreenState extends State<TimetableScreen> {
             child: const Text('Delete'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showCopyWeekDialog() {
-    int fromWeek = 1;
-    int toWeek = 2;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Copy Week'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Copy lessons from one week to another'),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Text('From: '),
-                  DropdownButton<int>(
-                    value: fromWeek,
-                    items: [1, 2]
-                        .map(
-                          (w) => DropdownMenuItem(
-                            value: w,
-                            child: Text('Week $w'),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => fromWeek = v!),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  const Text('To: '),
-                  DropdownButton<int>(
-                    value: toWeek,
-                    items: [1, 2]
-                        .map(
-                          (w) => DropdownMenuItem(
-                            value: w,
-                            child: Text('Week $w'),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (v) => setState(() => toWeek = v!),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (fromWeek == toWeek) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please select different weeks'),
-                    ),
-                  );
-                  return;
-                }
-                context.read<TimetableService>().copyWeek(
-                  fromWeekNumber: fromWeek,
-                  toWeekNumber: toWeek,
-                );
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Lessons copied from Week $fromWeek to Week $toWeek',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Copy'),
-            ),
-          ],
-        ),
       ),
     );
   }

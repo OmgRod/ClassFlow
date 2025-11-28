@@ -12,7 +12,7 @@ class SubjectService extends ChangeNotifier {
   }
 
   void _loadSubjects() {
-    _subjects = DatabaseService.subjectsBox.values.toList();
+    _subjects = List<Subject>.from(DatabaseService.subjects);
     notifyListeners();
   }
 
@@ -35,7 +35,8 @@ class SubjectService extends ChangeNotifier {
       bookIds: bookIds,
       colorValue: colorValue,
     );
-    await DatabaseService.subjectsBox.put(subject.id, subject);
+    DatabaseService.subjects.add(subject);
+    await DatabaseService.save();
     _loadSubjects();
     return subject;
   }
@@ -43,30 +44,26 @@ class SubjectService extends ChangeNotifier {
   /// Update an existing subject
   Future<void> updateSubject(Subject subject) async {
     subject.name = Subject.formatName(subject.name);
-    await DatabaseService.subjectsBox.put(subject.id, subject);
+    final index =
+        DatabaseService.subjects.indexWhere((s) => s.id == subject.id);
+    if (index != -1) {
+      DatabaseService.subjects[index] = subject;
+      await DatabaseService.save();
+    }
     _loadSubjects();
   }
 
   /// Delete a subject
   Future<void> deleteSubject(int id) async {
-    await DatabaseService.subjectsBox.delete(id);
-    
+    DatabaseService.subjects.removeWhere((s) => s.id == id);
+
     // Also delete associated books
-    final booksToDelete = DatabaseService.booksBox.values
-        .where((book) => book.subjectId == id)
-        .toList();
-    for (final book in booksToDelete) {
-      await DatabaseService.booksBox.delete(book.id);
-    }
-    
+    DatabaseService.books.removeWhere((book) => book.subjectId == id);
+
     // Also delete associated lessons
-    final lessonsToDelete = DatabaseService.lessonsBox.values
-        .where((lesson) => lesson.subjectId == id)
-        .toList();
-    for (final lesson in lessonsToDelete) {
-      await DatabaseService.lessonsBox.delete(lesson.id);
-    }
-    
+    DatabaseService.lessons.removeWhere((lesson) => lesson.subjectId == id);
+
+    await DatabaseService.save();
     _loadSubjects();
   }
 

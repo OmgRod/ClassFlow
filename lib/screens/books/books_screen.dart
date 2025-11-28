@@ -20,6 +20,14 @@ class _BooksScreenState extends State<BooksScreen> {
 
   String _keyFor(int subjectId, int bookId) => '$subjectId:$bookId';
 
+  void _selectAllForSubjects(List<Subject> subjects) {
+    setState(() {
+      _selected
+        ..clear()
+        ..addAll(subjects.expand((s) => s.bookIds.map((b) => _keyFor(s.id, b))));
+    });
+  }
+
   void _toggleSelection(int subjectId, int bookId) {
     final k = _keyFor(subjectId, bookId);
     setState(() {
@@ -166,6 +174,26 @@ class _BooksScreenState extends State<BooksScreen> {
           appBar: AppBar(
             title: const Text('Books'),
             actions: [
+              if (subjectsWithBooks.isNotEmpty)
+                IconButton(
+                  icon: Icon(
+                    _selected.length == subjectsWithBooks
+                            .expand((s) => s.bookIds)
+                            .length
+                        ? Icons.select_all
+                        : Icons.done_all,
+                  ),
+                  tooltip: _selected.isEmpty
+                      ? 'Select all books'
+                      : 'Clear selection',
+                  onPressed: () {
+                    if (_selected.isEmpty) {
+                      _selectAllForSubjects(subjectsWithBooks);
+                    } else {
+                      setState(() => _selected.clear());
+                    }
+                  },
+                ),
               if (_selected.isNotEmpty)
                 IconButton(
                   icon: const Icon(Icons.share),

@@ -21,18 +21,17 @@ class QrPdfService {
     final pageWidth = pageFormat.width; // points
     final pageHeight = pageFormat.height;
 
-    final qrWidth = (pageWidth * scale).clamp(20.0, pageWidth);
-    final columns = (pageWidth / qrWidth).floor().clamp(1, 10);
+    final tileWidth = (pageWidth * scale).clamp(60.0, pageWidth);
+    final columns = (pageWidth / tileWidth).floor().clamp(1, 6);
 
     // reserve some vertical space for label under each QR
     final labelHeight = 20.0;
     final verticalSpacing = 8.0;
-    final effectiveQrHeight = qrWidth + labelHeight + verticalSpacing;
-    final rows = (pageHeight / effectiveQrHeight).floor().clamp(1, 50);
+    final tileHeight = tileWidth + labelHeight + verticalSpacing + 24.0; // extra for padding/border
+    final rows = (pageHeight / tileHeight).floor().clamp(1, 12);
 
     final perPage = columns * rows;
 
-    // Precreate a Barcode QR generator
     int pageIndex = 0;
     while (pageIndex * perPage < items.length) {
       final start = pageIndex * perPage;
@@ -44,36 +43,57 @@ class QrPdfService {
           pageFormat: pageFormat,
           build: (context) {
             return pw.Padding(
-              padding: pw.EdgeInsets.all(12),
-              child: pw.GridView(
-                crossAxisCount: columns,
-                // keep cells roughly square but allow space for label beneath
-                childAspectRatio: qrWidth / effectiveQrHeight,
-                mainAxisSpacing: 8,
-                crossAxisSpacing: 8,
+              padding: const pw.EdgeInsets.all(24),
+              child: pw.Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: slice.map((it) {
                   final code = it['code'] ?? '';
                   final label = it['label'] ?? '';
 
-                  return pw.Column(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    children: [
-                      pw.Container(
-                        width: qrWidth,
-                        height: qrWidth,
-                        color: PdfColors.white,
-                        child: pw.Center(
-                          child: pw.BarcodeWidget(
-                            barcode: pw.Barcode.qrCode(),
-                            data: code,
-                            width: qrWidth,
-                            height: qrWidth,
+                  return pw.SizedBox(
+                    width: tileWidth,
+                    child: pw.Column(
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Container(
+                          padding: const pw.EdgeInsets.all(16),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.white,
+                            borderRadius: pw.BorderRadius.circular(12),
+                            border: pw.Border.all(
+                              color: PdfColors.black,
+                              width: 1,
+                            ),
+                          ),
+                          child: pw.Column(
+                            mainAxisSize: pw.MainAxisSize.min,
+                            children: [
+                              pw.BarcodeWidget(
+                                barcode: pw.Barcode.qrCode(),
+                                data: code,
+                                width: tileWidth * 0.7,
+                                height: tileWidth * 0.7,
+                              ),
+                              pw.SizedBox(height: 10),
+                              pw.FittedBox(
+                                fit: pw.BoxFit.scaleDown,
+                                child: pw.Text(
+                                  code,
+                                  style: pw.TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: pw.FontWeight.bold,
+                                    font: pw.Font.courier(),
+                                  ),
+                                  textAlign: pw.TextAlign.center,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      pw.SizedBox(height: 6),
-                      pw.Text(label, style: pw.TextStyle(fontSize: 10)),
-                    ],
+                      ],
+                    ),
                   );
                 }).toList(),
               ),
@@ -87,6 +107,8 @@ class QrPdfService {
 
     return pdf.save();
   }
+
+  // No extra helpers needed; FittedBox keeps code text on one line.
 
   /// Generate and share the PDF using the platform share sheet.
   static Future<void> generateAndShare(

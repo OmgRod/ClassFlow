@@ -1,80 +1,139 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
+
 import '../models/models.dart';
+import '../utils/file_utils.dart';
 
+/// JSON-backed replacement for the old Hive-based storage.
+///
+/// All data is stored in a single `db.json` file under the
+/// app's directory (managed by `FileUtils`). This makes the
+/// database human-readable and easy to export/debug.
 class DatabaseService {
-  static const String subjectsBoxName = 'subjects';
-  static const String booksBoxName = 'books';
-  static const String lessonsBoxName = 'lessons';
-  static const String templatesBoxName = 'templates';
-  static const String settingsBoxName = 'settings';
+  static const String _dbFileName = 'db.json';
 
-  static late Box<Subject> subjectsBox;
-  static late Box<Book> booksBox;
-  static late Box<Lesson> lessonsBox;
-  static late Box<LessonTemplate> templatesBox;
-  static late Box settingsBox;
-  static late Box<SpecialLesson> specialLessonsBox;
+  static bool _initialized = false;
 
-  /// Initialize Hive and register adapters
+  static final List<Subject> subjects = [];
+  static final List<Book> books = [];
+  static final List<Lesson> lessons = [];
+  static final List<LessonTemplate> templates = [];
+  static final List<SpecialLesson> specialLessons = [];
+  static final Map<String, dynamic> settings = {};
+
+  /// Initialize the JSON database by loading from disk or
+  /// creating an empty structure.
   static Future<void> initialize() async {
+    if (_initialized) return;
+
     try {
-      await Hive.initFlutter();
+      final appDir = await FileUtils.getAppDirectory();
+      if (!await appDir.exists()) {
+        await appDir.create(recursive: true);
+      }
 
-      // Register adapters
-      Hive.registerAdapter(SubjectAdapter());
-      Hive.registerAdapter(BookAdapter());
-      Hive.registerAdapter(LessonAdapter());
-      Hive.registerAdapter(RecurrenceTypeAdapter());
-      Hive.registerAdapter(LessonTemplateAdapter());
-      Hive.registerAdapter(SpecialLessonAdapter());
+      final dbFile = File(p.join(appDir.path, _dbFileName));
 
-      // Open boxes
-      subjectsBox = await Hive.openBox<Subject>(subjectsBoxName);
+      if (await dbFile.exists()) {
+        final raw = await dbFile.readAsString();
+        if (raw.trim().isNotEmpty) {
+          final decoded = json.decode(raw) as Map<String, dynamic>;
+          _loadFromMap(decoded);
+        }
+      }
+
+      _initialized = true;
       debugPrint(
-        'DatabaseService: opened subjectsBox (${subjectsBox.length} items)',
-      );
-      booksBox = await Hive.openBox<Book>(booksBoxName);
-      debugPrint('DatabaseService: opened booksBox (${booksBox.length} items)');
-      lessonsBox = await Hive.openBox<Lesson>(lessonsBoxName);
-      debugPrint(
-        'DatabaseService: opened lessonsBox (${lessonsBox.length} items)',
-      );
-      templatesBox = await Hive.openBox<LessonTemplate>(templatesBoxName);
-      debugPrint(
-        'DatabaseService: opened templatesBox (${templatesBox.length} items)',
-      );
-      settingsBox = await Hive.openBox(settingsBoxName);
-      debugPrint(
-        'DatabaseService: opened settingsBox (${settingsBox.keys.length} keys)',
-      );
-      // special lessons
-      specialLessonsBox = await Hive.openBox<SpecialLesson>('special_lessons');
-      debugPrint(
-        'DatabaseService: opened specialLessonsBox (${specialLessonsBox.length} items)',
+        'DatabaseService(JSON): initialized subjects=${subjects.length}, books=${books.length}, lessons=${lessons.length}, templates=${templates.length}, specialLessons=${specialLessons.length}, settingsKeys=${settings.keys.length}',
       );
     } catch (e, st) {
-      // Surface initialization errors clearly to logs
-      debugPrint('DatabaseService.initialize() failed: $e\n$st');
+      debugPrint('DatabaseService(JSON).initialize() failed: $e\n$st');
       rethrow;
     }
   }
 
-  /// Close all boxes
-  static Future<void> close() async {
-    await subjectsBox.close();
-    await booksBox.close();
-    await lessonsBox.close();
-    await templatesBox.close();
-    await specialLessonsBox.close();
+  /// Persist the in-memory state to `db.json`.
+  static Future<void> save() async {
+    try {
+      final appDir = await FileUtils.getAppDirectory();
+      if (!await appDir.exists()) {
+        await appDir.create(recursive: true);
+      }
+      final dbFile = File(p.join(appDir.path, _dbFileName));
+      final map = _toMap();
+      await dbFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(map),
+        flush: true,
+      );
+    } catch (e, st) {
+      debugPrint('DatabaseService(JSON).save() failed: $e\n$st');
+      rethrow;
+    }
   }
 
-  /// Clear all data
+  /// Clear all data in memory and on disk.
   static Future<void> clearAll() async {
-    await subjectsBox.clear();
-    await booksBox.clear();
-    await lessonsBox.clear();
-    await templatesBox.clear();
-    await specialLessonsBox.clear();
+    subjects.clear();
+    books.clear();
+    lessons.clear();
+    templates.clear();
+    specialLessons.clear();
+    settings.clear();
+    await save();
+  }
+
+  static void _loadFromMap(Map<String, dynamic> data) {
+    subjects
+      ..clear()
+      ..addAll(
+        (data['subjects'] as List<dynamic>? ?? [])
+            .map((e) => Subject.fromJson(e as Map<String, dynamic>)),
+      );
+
+    books
+      ..clear()
+      ..addAll(
+        (data['books'] as List<dynamic>? ?? [])
+            .map((e) => Book.fromJson(e as Map<String, dynamic>)),
+      );
+
+    lessons
+      ..clear()
+      ..addAll(
+        (data['lessons'] as List<dynamic>? ?? [])
+            .map((e) => Lesson.fromJson(e as Map<String, dynamic>)),
+      );
+
+    templates
+      ..clear()
+      ..addAll(
+        (data['lessonTemplates'] as List<dynamic>? ?? [])
+            .map((e) => LessonTemplate.fromJson(e as Map<String, dynamic>)),
+      );
+
+    specialLessons
+      ..clear()
+      ..addAll(
+        (data['specialLessons'] as List<dynamic>? ?? [])
+            .map((e) => SpecialLesson.fromJson(e as Map<String, dynamic>)),
+      );
+
+    settings
+      ..clear()
+      ..addAll((data['settings'] as Map<String, dynamic>? ?? {}));
+  }
+
+  static Map<String, dynamic> _toMap() {
+    return {
+      'subjects': subjects.map((s) => s.toJson()).toList(),
+      'books': books.map((b) => b.toJson()).toList(),
+      'lessons': lessons.map((l) => l.toJson()).toList(),
+      'lessonTemplates': templates.map((t) => t.toJson()).toList(),
+      'specialLessons': specialLessons.map((s) => s.toJson()).toList(),
+      'settings': settings,
+    };
   }
 }

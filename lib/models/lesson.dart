@@ -1,46 +1,16 @@
-import 'package:hive/hive.dart';
-
-part 'lesson.g.dart';
-
-@HiveType(typeId: 2)
-class Lesson extends HiveObject {
-  @HiveField(0)
+class Lesson {
   String id; // UUID
-
-  @HiveField(1)
   int subjectId;
-
-  @HiveField(2)
   int dayOfWeek; // 1 = Monday, 7 = Sunday
-
-  @HiveField(3)
   int startHour;
-
-  @HiveField(4)
   int startMinute;
-
-  @HiveField(5)
   int endHour;
-
-  @HiveField(6)
   int endMinute;
-
-  @HiveField(7)
   RecurrenceType recurrenceType;
-
-  @HiveField(8)
   int? customIntervalWeeks; // For custom recurrence
-
-  @HiveField(9)
   DateTime? startDate; // When the lesson starts recurring from
-
-  @HiveField(10)
   String? templateId; // For linking to a template
-
-  @HiveField(11)
   String? notes;
-
-  @HiveField(12)
   int weekNumber; // 1 or 2 for bi-weekly timetables, 0 for every week
 
   Lesson({
@@ -193,16 +163,73 @@ class Lesson extends HiveObject {
   String toString() {
     return 'Lesson(id: $id, subjectId: $subjectId, day: $dayName, $formattedStartTime-$formattedEndTime)';
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'subjectId': subjectId,
+      'dayOfWeek': dayOfWeek,
+      'startHour': startHour,
+      'startMinute': startMinute,
+      'endHour': endHour,
+      'endMinute': endMinute,
+      'recurrenceType': recurrenceType.toJson(),
+      'customIntervalWeeks': customIntervalWeeks,
+      'startDate': startDate?.toIso8601String(),
+      'templateId': templateId,
+      'notes': notes,
+      'weekNumber': weekNumber,
+    };
+  }
+
+  factory Lesson.fromJson(Map<String, dynamic> json) {
+    return Lesson(
+      id: json['id'] as String,
+      subjectId: json['subjectId'] as int,
+      dayOfWeek: json['dayOfWeek'] as int,
+      startHour: json['startHour'] as int,
+      startMinute: json['startMinute'] as int,
+      endHour: json['endHour'] as int,
+      endMinute: json['endMinute'] as int,
+      recurrenceType:
+          RecurrenceTypeJson.fromJson(json['recurrenceType'] as String),
+      customIntervalWeeks: json['customIntervalWeeks'] as int?,
+      startDate: json['startDate'] != null
+          ? DateTime.parse(json['startDate'] as String)
+          : null,
+      templateId: json['templateId'] as String?,
+      notes: json['notes'] as String?,
+      weekNumber: json['weekNumber'] as int? ?? 0,
+    );
+  }
+}
+enum RecurrenceType {
+  everyWeek,
+  everyTwoWeeks,
+  custom,
 }
 
-@HiveType(typeId: 3)
-enum RecurrenceType {
-  @HiveField(0)
-  everyWeek,
+extension RecurrenceTypeJson on RecurrenceType {
+  String toJson() {
+    switch (this) {
+      case RecurrenceType.everyWeek:
+        return 'everyWeek';
+      case RecurrenceType.everyTwoWeeks:
+        return 'everyTwoWeeks';
+      case RecurrenceType.custom:
+        return 'custom';
+    }
+  }
 
-  @HiveField(1)
-  everyTwoWeeks,
-
-  @HiveField(2)
-  custom,
+  static RecurrenceType fromJson(String value) {
+    switch (value) {
+      case 'everyTwoWeeks':
+        return RecurrenceType.everyTwoWeeks;
+      case 'custom':
+        return RecurrenceType.custom;
+      case 'everyWeek':
+      default:
+        return RecurrenceType.everyWeek;
+    }
+  }
 }
