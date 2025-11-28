@@ -1,5 +1,9 @@
 name: Build ClassFlow
 
+env:
+  SIGN_CERT: ${{ secrets.WINDOWS_SIGN_CERT }}
+  SIGN_CERT_PASSWORD: ${{ secrets.WINDOWS_SIGN_CERT_PASSWORD }}
+
 on:
   push:
     branches: [ main ]
@@ -78,8 +82,6 @@ jobs:
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
       - run: flutter build windows --release
-      - name: Create MSIX installer
-        run: flutter pub run msix:create
       - name: Zip windows runner
         run: |
           cd build/windows/x64/runner/Release
@@ -88,12 +90,14 @@ jobs:
         with:
           name: classflow-windows
           path: classflow-windows.zip
+      - name: Create MSIX installer
+        run: flutter pub run msix:create
       - name: Upload MSIX installer
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: classflow-windows-msix
-          path: "*.msix"
+          path: build/windows/x64/runner/Release/classflow.msix
 
   build-macos:
     runs-on: macos-latest
