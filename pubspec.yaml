@@ -1,5 +1,5 @@
-name: detention_safe
-description: "DetentionSafe - A Flutter app for managing subjects, books with QR codes, and timetables."
+name: classflow
+description: "ClassFlow - Manage your classes, books and timetable with QR codes."
 publish_to: 'none'
 version: 1.0.0
 

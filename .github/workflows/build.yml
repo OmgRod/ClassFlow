@@ -1,0 +1,125 @@
+name: Build ClassFlow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - run: flutter build appbundle --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build web --release
+      - name: Zip web build
+        run: |
+          cd build
+          zip -r ../classflow-web.zip web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classflow-web
+          path: classflow-web.zip
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux desktop deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+      - name: Zip linux runner
+        run: |
+          cd build/linux/x64/release/bundle
+          zip -r ../../../../../classflow-linux.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classflow-linux
+          path: classflow-linux.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Zip windows runner
+        run: |
+          cd build/windows/x64/runner/Release
+          powershell -Command "Compress-Archive -Path * -DestinationPath ../../../../../classflow-windows.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classflow-windows
+          path: classflow-windows.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter build macos --release
+      - name: Zip macOS app bundle
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r ../../../../classflow-macos.zip *.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classflow-macos
+          path: classflow-macos.zip
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build ipa --release --no-codesign
+      - name: Zip iOS IPA
+        run: |
+          cd build/ios
+          zip -r ../../classflow-ios-ipa.zip ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classflow-ios-ipa
+          path: classflow-ios-ipa.zip

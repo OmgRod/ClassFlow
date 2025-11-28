@@ -28,6 +28,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DateTime? week1StartDate;
   String themeMode = 'system'; // 'system' | 'light' | 'dark'
   String? exportPath;
+  String scheduleMode = 'weekly';
+  int? customCycleDays; // for multi-day cycles
+  int? customNWeeks; // for custom N-week cycles
 
   @override
   void initState() {
@@ -35,7 +38,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
-  static const MethodChannel _channel = MethodChannel('detention_safe');
+  static const MethodChannel _channel = MethodChannel('classflow');
 
   void _loadSettings() {
     invertWeekParity =
@@ -43,6 +46,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final iso = DatabaseService.settings['week1StartDate'] as String?;
     themeMode = (DatabaseService.settings['themeMode'] as String?) ?? 'system';
     exportPath = DatabaseService.settings['exportPath'] as String?;
+    scheduleMode =
+        (DatabaseService.settings['scheduleMode'] as String?) ?? 'weekly';
+    customCycleDays = DatabaseService.settings['customCycleDays'] as int?;
+    customNWeeks = DatabaseService.settings['customNWeeks'] as int?;
     if (iso != null) week1StartDate = DateTime.tryParse(iso);
     setState(() {});
   }
@@ -148,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     }
                     // try writing a small hidden test file to verify writable
                     final test = File(
-                      '${dir.path}${Platform.pathSeparator}.detention_safe_test',
+                      '${dir.path}${Platform.pathSeparator}.classflow_test',
                     );
                     await test.writeAsString('ok');
                     await test.delete();
@@ -266,6 +273,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         content: Text('Export path reset to app documents folder'),
       ),
     );
+  }
+
+  void _setScheduleMode(String mode) {
+    setState(() => scheduleMode = mode);
+    DatabaseService.settings['scheduleMode'] = mode;
+    DatabaseService.save();
   }
 
   Future<void> _runAllFixes() async {
@@ -409,7 +422,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       final fileName =
-          'detention_safe_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
+          'classflow_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
       // If custom path is a SAF tree URI (content://...), try saving via platform channel
       try {
         if (custom != null && custom.startsWith('content://')) {
@@ -848,6 +861,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ListTile(
+                title: const Text('Schedule type'),
+                subtitle: Text(_scheduleModeLabel(scheduleMode)),
+                trailing: DropdownButton<String>(
+                  value: scheduleMode,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'weekly',
+                      child: Text('Weekly fixed schedule'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'biweekly_ab',
+                      child: Text('Biweekly (A/B week)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'custom_n_week',
+                      child: Text('Custom N-week cycle'),
+                    ),
+                  ],
+                  onChanged: (v) => _setScheduleMode(v ?? 'weekly'),
+                ),
+              ),
+              const SizedBox(height: 8),
               SwitchListTile(
                 value: invertWeekParity,
                 onChanged: _toggleInvert,
@@ -1003,5 +1039,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  String _scheduleModeLabel(String mode) {
+    switch (mode) {
+      case 'biweekly_ab':
+        return 'Biweekly (A/B week) schedule';
+      case 'custom_n_week':
+        return 'Custom N-week cycle';
+      case 'weekly':
+      default:
+        return 'Weekly fixed schedule';
+    }
   }
 }

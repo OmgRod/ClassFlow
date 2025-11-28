@@ -28,7 +28,7 @@ class FileUtils {
     }
 
     final dir = Directory(
-      '${baseDir.path}${Platform.pathSeparator}detention_safe_data',
+      '${baseDir.path}${Platform.pathSeparator}classflow_data',
     );
 
     if (!await dir.exists()) {
