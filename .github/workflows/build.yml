@@ -117,8 +117,8 @@ jobs:
       - run: flutter build ipa --release --no-codesign
       - name: Zip iOS IPA
         run: |
-          cd build/ios
-          zip -r ../../classflow-ios-ipa.zip ipa
+          cd build/ios/ipa
+          zip -r ../../../classflow-ios-ipa.zip .
       - uses: actions/upload-artifact@v4
         with:
           name: classflow-ios-ipa
