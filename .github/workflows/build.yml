@@ -142,26 +142,28 @@ jobs:
   build-ios:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - run: flutter pub get
-      - run: flutter build ipa --release --no-codesign
-      - name: Inspect iOS build output
-        run: |
-          echo "=== build/ios contents ==="
-          ls -R build/ios || true
-      - name: Zip iOS IPA (if present)
-        run: |
-          IPA_DIR="build/ios"
-          IPA_FILES=$(find "$IPA_DIR" -maxdepth 5 -name "*.ipa" -print || true)
-          if [ -z "$IPA_FILES" ]; then
-            echo "No .ipa files found under $IPA_DIR; skipping iOS artifact.";
-            exit 0;
-          fi
-          zip -j classflow-ios-ipa.zip $IPA_FILES
-      - uses: actions/upload-artifact@v4
-        with:
-          name: classflow-ios-ipa
-          path: classflow-ios-ipa.zip
+    - uses: actions/checkout@v4
+
+    - name: Install Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+
+    - name: Get Flutter dependencies
+      run: flutter pub get
+
+    - name: Build iOS app unsigned
+      run: flutter build ios --no-codesign
+
+    - name: Create unsigned IPA manually
+      run: |
+        mkdir -p Payload
+        cp -r build/ios/iphoneos/Runner.app Payload/
+        zip -r build/ios/unsigned.ipa Payload
+        rm -rf Payload
+
+    - name: Upload iOS IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-unsigned-ipa
+        path: build/ios/unsigned.ipa
