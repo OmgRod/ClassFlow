@@ -85,11 +85,8 @@ jobs:
           name: classflow-windows-portable
           path: build/windows/x64/runner/Release
 
-  build-windows-msix:
+  build-windows-nsis:
     runs-on: windows-latest
-    env:
-      SIGN_CERT: ${{ secrets.SIGN_CERT }}
-      SIGN_CERT_PASSWORD: ${{ secrets.SIGN_CERT_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -97,71 +94,18 @@ jobs:
           channel: stable
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
-      - name: Setup Windows SDK for signtool
-        uses: microsoft/setup-msbuild@v2
-      - name: Build unsigned MSIX
-        shell: powershell
+      - run: flutter build windows --release
+      - name: Install NSIS
+        run: choco install nsis -y
+      - name: Build NSIS installer
+        shell: cmd
         run: |
-          flutter pub run msix:create
-      - name: Reconstruct PFX from base64 secret
-        if: env.SIGN_CERT != ''
-        shell: powershell
-        run: |
-          $pfxPath = Join-Path $PWD 'omgrod-code-signing.pfx'
-          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGN_CERT))
-          Write-Host "Wrote PFX to $pfxPath"
-      - name: Sign MSIX via signtool
-        if: env.SIGN_CERT != '' && env.SIGN_CERT_PASSWORD != ''
-        shell: powershell
-        run: |
-          $msix = 'build/windows/x64/runner/Release/classflow.msix'
-          if (-not (Test-Path $msix)) { throw "MSIX not found at $msix" }
-          # Find signtool from Windows SDK
-          $kits = @("${env:ProgramFiles(x86)}\Windows Kits\10\bin", "${env:ProgramFiles}\Windows Kits\10\bin")
-          $signtool = $null
-          foreach ($k in $kits) {
-            if (Test-Path $k) {
-              $found = Get-ChildItem -Path $k -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | 
-                       Sort-Object FullName -Descending | Select-Object -First 1
-              if ($found) { $signtool = $found.FullName; break }
-            }
-          }
-          if (-not $signtool) {
-            $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Path
-          }
-          if (-not $signtool) { throw 'signtool.exe not found. Ensure Windows SDK is installed.' }
-          Write-Host "Using signtool: $signtool"
-          & "$signtool" sign /fd sha256 /f omgrod-code-signing.pfx /p $env:SIGN_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 $msix
-          if ($LASTEXITCODE -ne 0) { throw "signtool signing failed with exit code $LASTEXITCODE" }
-          Write-Host 'MSIX signed successfully.'
-      - name: Verify MSIX signature
-        if: env.SIGN_CERT != '' && env.SIGN_CERT_PASSWORD != ''
-        shell: powershell
-        run: |
-          $msix = 'build/windows/x64/runner/Release/classflow.msix'
-          # Find signtool
-          $kits = @("${env:ProgramFiles(x86)}\Windows Kits\10\bin", "${env:ProgramFiles}\Windows Kits\10\bin")
-          $signtool = $null
-          foreach ($k in $kits) {
-            if (Test-Path $k) {
-              $found = Get-ChildItem -Path $k -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | 
-                       Sort-Object FullName -Descending | Select-Object -First 1
-              if ($found) { $signtool = $found.FullName; break }
-            }
-          }
-          if (-not $signtool) {
-            $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Path
-          }
-          if (-not $signtool) { throw 'signtool.exe not found for verification.' }
-          Write-Host "Verifying signature with: $signtool"
-          & "$signtool" verify /pa /v $msix
-          if ($LASTEXITCODE -ne 0) { throw "MSIX signature verification failed with exit code $LASTEXITCODE" }
-          Write-Host 'MSIX signature verified successfully.'
-      - name: Upload MSIX installer
+          makensis installer\windows\classflow.nsi
+      - name: Upload NSIS installer
         uses: actions/upload-artifact@v4
         with:
-          name: classflow-windows-msix
-          path: build/windows/x64/runner/Release/classflow.msix
+          name: classflow-windows-nsis
+          path: classflow-setup-0.2.0.exe
 
   build-macos:
     runs-on: macos-latest
