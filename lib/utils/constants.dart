@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppConstants {
   // App info
   static const String appName = 'ClassFlow';
-  static const String appVersion = '0.1.2';
+  static const String appVersion = '0.2.0';
 
   // Days of week
   static const List<String> daysOfWeek = [
