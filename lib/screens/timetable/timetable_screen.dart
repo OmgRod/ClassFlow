@@ -5,6 +5,7 @@ import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
+import '../../widgets/widgets.dart';
 import 'lesson_form_screen.dart';
 import '../scanner/scanner_screen.dart';
 
@@ -251,29 +252,31 @@ class _TimetableScreenState extends State<TimetableScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            _buildDetailRow(Icons.calendar_today, lesson.dayName),
-            _buildDetailRow(
-              Icons.timer,
-              TimeUtils.formatDuration(lesson.durationMinutes),
+            IconTextRow(icon: Icons.calendar_today, text: lesson.dayName),
+            IconTextRow(
+              icon: Icons.timer,
+              text: TimeUtils.formatDuration(lesson.durationMinutes),
             ),
-            _buildDetailRow(Icons.repeat, _getRecurrenceText(lesson)),
+            IconTextRow(icon: Icons.repeat, text: _getRecurrenceText(lesson)),
             if (lesson.weekNumber > 0)
-              _buildDetailRow(Icons.view_week, 'Week ${lesson.weekNumber}'),
+              IconTextRow(icon: Icons.view_week, text: 'Week ${lesson.weekNumber}'),
             if (lesson.notes != null && lesson.notes!.isNotEmpty)
-              _buildDetailRow(Icons.note, lesson.notes!),
+              IconTextRow(icon: Icons.note, text: lesson.notes!),
             const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton.icon(
+            ActionButtonsRow(
+              alignment: MainAxisAlignment.spaceEvenly,
+              buttons: [
+                ActionButtonData(
+                  icon: Icons.edit,
+                  label: 'Edit',
                   onPressed: () {
                     Navigator.pop(context);
                     _editLesson(lesson);
                   },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit'),
                 ),
-                TextButton.icon(
+                ActionButtonData(
+                  icon: Icons.delete,
+                  label: 'Delete',
                   onPressed: () {
                     Navigator.pop(context);
                     _confirmDeleteLesson(
@@ -281,27 +284,11 @@ class _TimetableScreenState extends State<TimetableScreen> {
                       context.read<TimetableService>(),
                     );
                   },
-                  icon: const Icon(Icons.delete),
-                  label: const Text('Delete'),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
                 ),
               ],
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.grey),
-          const SizedBox(width: 12),
-          Text(text),
-        ],
       ),
     );
   }

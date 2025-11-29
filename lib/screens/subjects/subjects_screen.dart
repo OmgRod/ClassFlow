@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/theme.dart';
+import '../../widgets/widgets.dart';
 import 'subject_form_screen.dart';
 
 class SubjectsScreen extends StatelessWidget {
@@ -15,29 +16,14 @@ class SubjectsScreen extends StatelessWidget {
         final subjects = subjectService.subjects;
 
         if (subjects.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.subject_outlined,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No subjects yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 8),
-                const Text('Tap + to add your first subject'),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () => _navigateToAddSubject(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Subject'),
-                ),
-              ],
+          return EmptyState(
+            icon: Icons.subject_outlined,
+            title: 'No subjects yet',
+            subtitle: 'Tap + to add your first subject',
+            action: ElevatedButton.icon(
+              onPressed: () => _navigateToAddSubject(context),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Subject'),
             ),
           );
         }
@@ -149,24 +135,11 @@ class _SubjectCard extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color, width: 2),
-                ),
-                child: Center(
-                  child: Text(
-                    subject.name.isNotEmpty ? subject.name[0] : '?',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                ),
+              ColorAvatar(
+                color: color,
+                text: subject.name.isNotEmpty ? subject.name[0] : '?',
+                size: 50,
+                fontSize: 20,
               ),
               const SizedBox(width: 16),
               Expanded(

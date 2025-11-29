@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/theme.dart';
+import '../../widgets/widgets.dart';
 import 'qr_code_screen.dart';
 import '../../services/qr_pdf_service.dart';
 
@@ -107,24 +108,10 @@ class _BooksScreenState extends State<BooksScreen> {
         final subjects = subjectService.subjects;
 
         if (subjects.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.book_outlined,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No subjects with books',
-                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 8),
-                const Text('Add subjects with books first'),
-              ],
-            ),
+          return const EmptyState(
+            icon: Icons.book_outlined,
+            title: 'No subjects with books',
+            subtitle: 'Add subjects with books first',
           );
         }
 
@@ -134,24 +121,10 @@ class _BooksScreenState extends State<BooksScreen> {
             .toList();
 
         if (subjectsWithBooks.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.book_outlined,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No books added',
-                  style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                ),
-                const SizedBox(height: 8),
-                const Text('Add book IDs to your subjects'),
-              ],
-            ),
+          return const EmptyState(
+            icon: Icons.book_outlined,
+            title: 'No books added',
+            subtitle: 'Add book IDs to your subjects',
           );
         }
 
@@ -263,23 +236,13 @@ class _SubjectBooksCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      subject.name.isNotEmpty ? subject.name[0] : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+                ColorAvatar(
+                  color: color,
+                  text: subject.name.isNotEmpty ? subject.name[0] : '?',
+                  size: 40,
+                  borderRadius: 8,
+                  borderWidth: 0,
+                  fontSize: 18,
                 ),
                 const SizedBox(width: 12),
                 Expanded(

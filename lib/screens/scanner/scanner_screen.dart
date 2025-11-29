@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/theme.dart';
+import '../../widgets/widgets.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -57,42 +58,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
             onPressed: () => Navigator.of(context).maybePop(),
           ),
         ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.qr_code_scanner,
-                  size: 80,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Scanner Not Available',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'The QR code scanner is currently only available on mobile devices (Android & iOS).',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey.shade600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'On desktop, you can manually find books in the Books tab by browsing through subjects.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey.shade500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+        body: const Padding(
+          padding: EdgeInsets.all(24),
+          child: EmptyState(
+            icon: Icons.qr_code_scanner,
+            title: 'Scanner Not Available',
+            subtitle: 'The QR code scanner is currently only available on mobile devices (Android & iOS).\n\nOn desktop, you can manually find books in the Books tab by browsing through subjects.',
           ),
         ),
       );
@@ -430,26 +401,13 @@ class _ScannerScreenState extends State<ScannerScreen> {
           children: [
             Row(
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: color, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _scannedSubject!.name.isNotEmpty
-                          ? _scannedSubject!.name[0]
-                          : '?',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ),
+                ColorAvatar(
+                  color: color,
+                  text: _scannedSubject!.name.isNotEmpty
+                      ? _scannedSubject!.name[0]
+                      : '?',
+                  size: 60,
+                  fontSize: 28,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
