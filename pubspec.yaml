@@ -1,7 +1,7 @@
 name: classflow
 description: "ClassFlow - Manage your classes, books and timetable with QR codes."
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ^3.9.2
@@ -61,7 +61,7 @@ msix_config:
   display_name: ClassFlow
   publisher_display_name: OmgRod
   identity_name: dev.omgrod.classflow
-  msix_version: 0.1.0.0
+  msix_version: 0.1.1.0
   publisher: CN=OmgRod
 
   logo_path: windows/runner/resources/app_icon.ico
