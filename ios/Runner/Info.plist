@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>ClassFlow uses the camera to scan QR codes and manage class materials.</string>
 </dict>
 </plist>
