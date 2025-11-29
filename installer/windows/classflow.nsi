@@ -37,6 +37,16 @@ Section "Install"
   SetOutPath "$INSTDIR"
   ; Copy built release files from Flutter build output
   ; Expect `flutter build windows` output under build/windows/x64/runner/Release
+  ; Verify build output exists before attempting to package
+  IfFileExists "build\windows\x64\runner\Release\classflow.exe" 0 checkUpper
+  Goto continue
+  checkUpper:
+    IfFileExists "build\windows\x64\runner\Release\ClassFlow.exe" 0 buildMissing
+    Goto continue
+  buildMissing:
+    MessageBox MB_OK "Windows release build not found. Run 'flutter build windows --release' first."
+    Abort
+  continue:
   File /r "build/windows/x64/runner/Release/*"
 
   ; Create shortcuts
