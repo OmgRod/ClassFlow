@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -46,6 +47,56 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    // Check if platform is supported
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Scanner'),
+          leading: BackButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.qr_code_scanner,
+                  size: 80,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Scanner Not Available',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'The QR code scanner is currently only available on mobile devices (Android & iOS).',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'On desktop, you can manually find books in the Books tab by browsing through subjects.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -144,35 +195,49 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Widget _buildCameraError(String message) {
+    final isDesktop =
+        Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+
     return Container(
       color: Colors.black,
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.camera_alt, size: 64, color: Colors.white54),
-            const SizedBox(height: 16),
-            const Text(
-              'Camera Access Required',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.camera_alt, size: 64, color: Colors.white54),
+              const SizedBox(height: 16),
+              const Text(
+                'Camera Access Required',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: const TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _requestCameraPermission(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: const TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              if (isDesktop) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Make sure your camera is connected and not being used by another application.',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _requestCameraPermission(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -305,7 +370,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
   Widget _buildErrorState(ThemeData theme, bool isDark) {
     return Card(
       color: isDark
-          ? theme.colorScheme.errorContainer.withOpacity(0.2)
+          ? theme.colorScheme.errorContainer.withValues(alpha: 0.2)
           : Colors.red.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -356,7 +421,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     return Card(
       color: isDark
-          ? theme.colorScheme.surfaceVariant.withOpacity(0.3)
+          ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
           : Colors.green.shade50,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -369,7 +434,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: color, width: 2),
                   ),
@@ -431,7 +496,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? theme.colorScheme.onSurface.withOpacity(0.08)
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.08)
                     : Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -463,10 +528,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
     // Prefer the barcode whose bounding box is closest to the center
     // of the camera preview. Fall back to the first valid one.
-    final Size? size = capture.size;
-    Barcode? chosen;
+    final Size size = capture.size;
+    Barcode? candidate;
 
-    if (size != null) {
+    {
       final center = Offset(size.width / 2, size.height / 2);
       double bestDistance = double.infinity;
 
@@ -497,17 +562,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
         if (distance < bestDistance) {
           bestDistance = distance;
-          chosen = b;
+          candidate = b;
         }
       }
     }
 
     // If we didn't find a centered candidate with bounds, just use the first
     // barcode that has a value.
-    chosen ??= capture.barcodes.firstWhere(
-      (b) => b.rawValue != null,
-      orElse: () => capture.barcodes.first,
-    );
+    final Barcode chosen =
+        (candidate ??
+        capture.barcodes.firstWhere(
+          (b) => b.rawValue != null,
+          orElse: () => capture.barcodes.first,
+        ));
 
     if (chosen.rawValue == null) return;
 
@@ -592,6 +659,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
   }
 
   Future<void> _requestCameraPermission() async {
+    // On Windows/Desktop, permission_handler doesn't work properly
+    // Just restart the controller and let the system handle permissions
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      _controller?.dispose();
+      _initController();
+      setState(() {
+        _hasError = false;
+        _errorMessage = null;
+      });
+      return;
+    }
+
+    // Mobile platforms (Android/iOS)
     final status = await Permission.camera.request();
     if (status.isGranted) {
       _controller?.dispose();
@@ -602,6 +682,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       });
     } else if (status.isPermanentlyDenied) {
       // Guide user to settings
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -626,6 +707,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       );
     } else {
       // Show a simple message
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -657,7 +739,7 @@ class _ScannerOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.black.withOpacity(0.5)
+      ..color = Colors.black.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
     final scanRect = Rect.fromCenter(

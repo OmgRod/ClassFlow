@@ -138,8 +138,9 @@ class TimetableService extends ChangeNotifier {
       }
 
       // respect recurrence rules (occursOn handles everyWeek, everyTwoWeeks, custom)
-      if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase))
+      if (!l.occursOn(date, invertWeekParity: invert, globalBase: globalBase)) {
         return false;
+      }
 
       return true;
     }).toList()..sort((a, b) {

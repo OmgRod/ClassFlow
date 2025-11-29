@@ -12,11 +12,11 @@ void main() async {
   // Initialize database
   await DatabaseService.initialize();
 
-  runApp(const DetentionSafeApp());
+  runApp(const ClassFlowApp());
 }
 
-class DetentionSafeApp extends StatelessWidget {
-  const DetentionSafeApp({super.key});
+class ClassFlowApp extends StatelessWidget {
+  const ClassFlowApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -79,8 +79,7 @@ class _RootWithOnboardingState extends State<_RootWithOnboarding> {
         },
       );
 
-      settings['hasSeenTutorial'] = true;
-      await DatabaseService.save();
+      // Note: hasSeenTutorial is now set by the dialog itself if "Don't show again" is checked
     });
   }
 
@@ -95,6 +94,7 @@ class TutorialDialog extends StatefulWidget {
   final bool usesWeekNumbers;
 
   const TutorialDialog({
+    super.key,
     required this.hasLessons,
     required this.usesWeekNumbers,
   });
@@ -105,6 +105,7 @@ class TutorialDialog extends StatefulWidget {
 
 class _TutorialDialogState extends State<TutorialDialog> {
   int _page = 0;
+  bool _dontShowAgain = false;
 
   void _next() {
     setState(() {
@@ -181,6 +182,25 @@ class _TutorialDialogState extends State<TutorialDialog> {
           pages[_page],
           const SizedBox(height: 16),
           Row(
+            children: [
+              Checkbox(
+                value: _dontShowAgain,
+                onChanged: (value) {
+                  setState(() {
+                    _dontShowAgain = value ?? false;
+                  });
+                },
+              ),
+              const Expanded(
+                child: Text(
+                  "Don't show this again",
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
@@ -205,7 +225,15 @@ class _TutorialDialogState extends State<TutorialDialog> {
               ),
               TextButton(
                 onPressed: _page == pages.length - 1
-                    ? () => Navigator.of(context).pop()
+                    ? () async {
+                        if (_dontShowAgain) {
+                          DatabaseService.settings['hasSeenTutorial'] = true;
+                          await DatabaseService.save();
+                        }
+                        if (!mounted) return;
+                        // ignore: use_build_context_synchronously
+                        Navigator.of(context).pop();
+                      }
                     : _next,
                 child: Text(_page == pages.length - 1 ? 'Done' : 'Next'),
               ),

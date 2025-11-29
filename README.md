@@ -1,4 +1,4 @@
-# DetentionSafe
+# ClassFlow
 
 A Flutter app for managing subjects, books with QR codes, and timetables.
 

@@ -33,10 +33,11 @@ class _BooksScreenState extends State<BooksScreen> {
   void _toggleSelection(int subjectId, int bookId) {
     final k = _keyFor(subjectId, bookId);
     setState(() {
-      if (_selected.contains(k))
+      if (_selected.contains(k)) {
         _selected.remove(k);
-      else
+      } else {
         _selected.add(k);
+      }
     });
   }
 
@@ -254,7 +255,7 @@ class _SubjectBooksCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -398,9 +399,11 @@ class _SubjectBooksCard extends StatelessWidget {
                       ),
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
+                        color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: statusColor.withOpacity(0.9)),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.9),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

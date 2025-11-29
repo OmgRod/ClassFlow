@@ -61,9 +61,9 @@ class SubjectsScreen extends StatelessWidget {
               bottom: 16,
               right: 16,
               child: FloatingActionButton(
+                tooltip: 'Add Subject',
                 onPressed: () => _navigateToAddSubject(context),
                 child: const Icon(Icons.add),
-                tooltip: 'Add Subject',
               ),
             ),
           ],
@@ -153,7 +153,7 @@ class _SubjectCard extends StatelessWidget {
                 width: 50,
                 height: 50,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: color, width: 2),
                 ),

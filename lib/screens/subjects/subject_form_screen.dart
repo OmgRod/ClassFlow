@@ -145,7 +145,7 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: _selectedColor.withOpacity(0.2),
+                      backgroundColor: _selectedColor.withValues(alpha: 0.2),
                       child: Text(
                         '$bookId',
                         style: TextStyle(
@@ -389,7 +389,7 @@ class _ColorPickerRow extends StatelessWidget {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: color.withOpacity(0.5),
+                          color: color.withValues(alpha: 0.5),
                           blurRadius: 8,
                           spreadRadius: 2,
                         ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 import 'subjects/subjects_screen.dart';
 import 'books/books_screen.dart';
 import 'timetable/timetable_screen.dart';

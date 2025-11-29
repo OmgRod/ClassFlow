@@ -132,7 +132,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                 Text('Subject', style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: subjects.any((s) => s.id == _selectedSubjectId)
+                  initialValue: subjects.any((s) => s.id == _selectedSubjectId)
                       ? _selectedSubjectId
                       : subjects.first.id,
                   decoration: const InputDecoration(
@@ -179,7 +179,7 @@ class _LessonFormScreenState extends State<LessonFormScreen> {
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
-                  value: _selectedDayOfWeek,
+                  initialValue: _selectedDayOfWeek,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.calendar_today),
                   ),

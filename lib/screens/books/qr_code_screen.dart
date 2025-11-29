@@ -62,7 +62,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
                       width: 50,
                       height: 50,
                       decoration: BoxDecoration(
-                        color: subjectColor.withOpacity(0.2),
+                        color: subjectColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: subjectColor, width: 2),
                       ),
@@ -115,7 +115,7 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),
@@ -271,6 +271,19 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         mimeType: 'image/png',
         bytes: bytes,
       );
+
+      // On iOS, saveFile uses share sheet
+      if (Platform.isIOS) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('QR code shared. Choose where to save it.'),
+            ),
+          );
+        }
+        return;
+      }
+
       final filePath =
           saved?.path ?? '${directory.path}${Platform.pathSeparator}$fileName';
       if (saved == null) {

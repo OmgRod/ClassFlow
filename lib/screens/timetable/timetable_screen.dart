@@ -53,7 +53,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
               },
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: const BoxDecoration(
@@ -128,6 +128,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
             children: [
               FloatingActionButton.small(
                 heroTag: 'scan_day',
+                tooltip: 'Scan / Manage books for this day',
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -135,14 +136,13 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   );
                 },
                 child: const Icon(Icons.qr_code_scanner),
-                tooltip: 'Scan / Manage books for this day',
               ),
               const SizedBox(height: 8),
               FloatingActionButton.small(
                 heroTag: 'regular',
+                tooltip: 'Add Lesson',
                 onPressed: () => _addLesson(dayOfWeek),
                 child: const Icon(Icons.add),
-                tooltip: 'Add Lesson',
               ),
             ],
           ),
@@ -211,7 +211,7 @@ class _TimetableScreenState extends State<TimetableScreen> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: color, width: 2),
                   ),
@@ -390,7 +390,7 @@ class _LessonCard extends StatelessWidget {
                 width: 60,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -405,7 +405,7 @@ class _LessonCard extends StatelessWidget {
                     Container(
                       height: 20,
                       width: 1,
-                      color: color.withOpacity(0.3),
+                      color: color.withValues(alpha: 0.3),
                     ),
                     Text(
                       lesson.formattedEndTime,

@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:file_selector/file_selector.dart';
 import '../../services/file_selector_service.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 // share_plus not used for direct save; keep dependency available if sharing later
 
 import 'package:provider/provider.dart';
@@ -17,7 +16,7 @@ import '../../services/theme_service.dart';
 import '../../services/timetable_service.dart';
 import '../../main.dart' show TutorialDialog;
 import '../../models/models.dart';
-import '../../utils/file_utils.dart';
+// removed file_utils usage after simplifying import/export to file picker only
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -70,17 +69,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RadioListTile<String>(
-                  value: 'app',
-                  groupValue: mode,
-                  title: const Text('Use app documents folder (default)'),
-                  onChanged: (v) => setStateDialog(() => mode = v ?? 'app'),
-                ),
-                RadioListTile<String>(
-                  value: 'custom',
-                  groupValue: mode,
-                  title: const Text('Custom folder'),
-                  onChanged: (v) => setStateDialog(() => mode = v ?? 'custom'),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment<String>(
+                      value: 'app',
+                      label: Text('Use app documents folder (default)'),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'custom',
+                      label: Text('Custom folder'),
+                    ),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (sel) =>
+                      setStateDialog(() => mode = sel.first),
                 ),
                 if (mode == 'custom')
                   TextField(
@@ -106,12 +108,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           controller.text = uri;
                           setStateDialog(() => mode = 'custom');
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          if (!mounted) return;
+                          // ignore: use_build_context_synchronously
+                          ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(content: Text('No folder selected')),
                           );
                         }
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        if (!mounted) return;
+                        // ignore: use_build_context_synchronously
+                        ScaffoldMessenger.of(ctx).showSnackBar(
                           SnackBar(content: Text('Folder picker failed: $e')),
                         );
                       }
@@ -130,13 +136,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DatabaseService.settings.remove('exportPath');
                     await DatabaseService.save();
                     setState(() => exportPath = null);
+                    // ignore: use_build_context_synchronously
                     Navigator.of(ctx).pop(true);
                     return;
                   }
 
                   final path = controller.text.trim();
                   if (path.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!mounted) return;
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(ctx).showSnackBar(
                       const SnackBar(content: Text('Please enter a path')),
                     );
                     return;
@@ -147,7 +156,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (path.startsWith('content://')) {
                       DatabaseService.settings['exportPath'] = path;
                       await DatabaseService.save();
+                      if (!mounted) return;
                       setState(() => exportPath = path);
+                      // ignore: use_build_context_synchronously
                       Navigator.of(ctx).pop(true);
                       return;
                     }
@@ -165,10 +176,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     DatabaseService.settings['exportPath'] = path;
                     await DatabaseService.save();
+                    if (!mounted) return;
                     setState(() => exportPath = path);
+                    // ignore: use_build_context_synchronously
                     Navigator.of(ctx).pop(true);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!mounted) return;
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(ctx).showSnackBar(
                       SnackBar(content: Text('Failed to set folder: $e')),
                     );
                   }
@@ -181,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
 
-    if (result == true) setState(() {});
+    if (result == true && mounted) setState(() {});
   }
 
   Future<void> _pickWeek1Date() async {
@@ -193,6 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       lastDate: DateTime(now.year + 5),
     );
     if (picked != null) {
+      if (!mounted) return;
       setState(() => week1StartDate = picked);
       DatabaseService.settings['week1StartDate'] = picked.toIso8601String();
       await DatabaseService.save();
@@ -226,7 +242,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _showProgressDialog(String title) async {
+    if (!mounted) return;
     showDialog(
+      // ignore: use_build_context_synchronously
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
@@ -245,7 +263,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bookService = context.read<BookService>();
     await _showProgressDialog('Repairing subject ↔ book mappings...');
     final updated = await bookService.repairSubjectBookMappings();
+    if (!mounted) return; // before pop
+    // ignore: use_build_context_synchronously
     Navigator.of(context).pop();
+    if (!mounted) return; // before snackbar
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Updated $updated subject mappings')),
     );
@@ -256,7 +278,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bookService = context.read<BookService>();
     await _showProgressDialog('Repairing book statuses...');
     final result = await bookService.repairBookStatuses();
+    if (!mounted) return; // before pop
+    // ignore: use_build_context_synchronously
     Navigator.of(context).pop();
+    if (!mounted) return; // before snackbar
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -271,6 +297,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     DatabaseService.settings.remove('exportPath');
     await DatabaseService.save();
     setState(() => exportPath = null);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Export path reset to app documents folder'),
@@ -288,7 +315,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final bookService = context.read<BookService>();
     await _showProgressDialog('Running all fixes...');
     final summary = await bookService.runAllRepairs();
+    if (!mounted) return; // before pop
+    // ignore: use_build_context_synchronously
     Navigator.of(context).pop();
+    if (!mounted) return; // before snackbar
+    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -352,181 +383,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
       payload['settings'] = Map<String, dynamic>.from(DatabaseService.settings);
 
       final jsonStr = const JsonEncoder.withIndent('  ').convert(payload);
-      String? custom = DatabaseService.settings['exportPath'] as String?;
-      Directory dir;
-      if (custom != null && custom.isNotEmpty) {
-        dir = Directory(custom);
-        if (!await dir.exists()) await dir.create(recursive: true);
-      } else {
-        // If no custom path is set, let Android users choose where to save (SAF) or use Downloads.
-        try {
-          if (Platform.isAndroid) {
-            // Ask the user whether they want to choose a folder or save to Downloads
-            final choice = await showDialog<String?>(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Export Destination'),
-                content: const Text(
-                  'Where would you like to save the export file?',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop('downloads'),
-                    child: const Text('Downloads (recommended)'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop('choose'),
-                    child: const Text('Choose folder'),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(null),
-                    child: const Text('Cancel'),
-                  ),
-                ],
-              ),
-            );
-
-            if (choice == 'choose') {
-              try {
-                final uri = await _channel.invokeMethod<String>(
-                  'pickDirectory',
-                );
-                if (uri != null && uri.isNotEmpty) {
-                  // store the SAF tree URI for future exports and use it for this export
-                  DatabaseService.settings['exportPath'] = uri;
-                  await DatabaseService.save();
-                  custom = uri;
-                  // use app exports directory as a local fallback path variable (we won't write to it when custom is a SAF URI)
-                  dir = await FileUtils.getExportsDirectory();
-                } else {
-                  // user cancelled picker, fall back to app exports directory
-                  dir = await FileUtils.getExportsDirectory();
-                }
-              } catch (e) {
-                // If SAF picker fails, fallback to app exports directory
-                dir = await FileUtils.getExportsDirectory();
-              }
-            } else if (choice == 'downloads') {
-              // For downloads choice, use the app exports directory instead
-              dir = await FileUtils.getExportsDirectory();
-            } else {
-              // cancelled - use app exports directory
-              dir = await FileUtils.getExportsDirectory();
-            }
-          } else {
-            dir = await FileUtils.getExportsDirectory();
-          }
-          if (!await dir.exists()) await dir.create(recursive: true);
-        } catch (e) {
-          // Fallback to app exports directory if external access fails
-          dir = await FileUtils.getExportsDirectory();
-          if (!await dir.exists()) await dir.create(recursive: true);
-        }
-      }
-
       final fileName =
           'classflow_export_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
-      // If custom path is a SAF tree URI (content://...), try saving via platform channel
-      try {
-        if (custom != null && custom.startsWith('content://')) {
-          final bytes = Uint8List.fromList(utf8.encode(jsonStr));
-          final ok = await _channel.invokeMethod<bool>('saveFileToUri', {
-            'treeUri': custom,
-            'filename': fileName,
-            'bytes': bytes,
-          });
-          if (ok == true) {
-            await showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Export Saved'),
-                content: const Text(
-                  'Export saved to selected folder (via SAF).',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-            );
-            return;
-          }
-        }
 
-        // Otherwise try MediaStore Downloads first (better visibility on many Android devices)
-        if (Platform.isAndroid) {
-          final bytes = Uint8List.fromList(utf8.encode(jsonStr));
-          final ok = await _channel.invokeMethod<bool>('saveBytesToDownloads', {
-            'filename': fileName,
-            'mime': 'application/json',
-            'bytes': bytes,
-          });
-          if (ok == true) {
-            await showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Export Saved'),
-                content: Text('Export saved to Downloads as $fileName'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-            );
-            return;
-          }
-        }
+      // Only use a file picker (or share sheet on iOS)
+      final fs = FileSelectorService();
+      final saved = await fs.saveFile(
+        suggestedName: fileName,
+        mimeType: 'application/json',
+        bytes: Uint8List.fromList(utf8.encode(jsonStr)),
+      );
 
-        // Fallback: prompt user for save location via FileSelectorService, else write to app documents
-        final fs = FileSelectorService();
-        final saved = await fs.saveFile(
-          suggestedName: fileName,
-          mimeType: 'application/json',
-          bytes: Uint8List.fromList(utf8.encode(jsonStr)),
-        );
-        final savedPath =
-            saved?.path ?? '${dir.path}${Platform.pathSeparator}$fileName';
-        if (saved == null) {
-          final file = File(savedPath);
-          await file.writeAsString(jsonStr);
-        }
-
-        // Saved; inform the user of location
+      if (Platform.isIOS) {
+        // iOS uses share sheet; no path to show
+        if (!mounted) return;
         await showDialog(
           context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Export Saved'),
-            content: Text('Export saved to:\n$savedPath'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+          builder: (_) => const AlertDialog(
+            title: Text('Export Shared'),
+            content: Text('Choose where to save the exported file.'),
           ),
         );
-      } catch (e) {
-        // If platform channel failed or MediaStore failed, show a robust error message
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Export Failed'),
-            content: Text('Failed to save export: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
+        return;
       }
+
+      if (saved == null) {
+        // User canceled
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (_) => const AlertDialog(
+            title: Text('Export Canceled'),
+            content: Text('No file was saved.'),
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Export Saved'),
+          content: Text('Saved to:\n${saved.path}'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
-      showDialog(
+      if (!mounted) return;
+      await showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Export Failed'),
@@ -543,7 +453,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _importData() async {
-    // First try the platform-native file selector (Android SAF / iOS document picker / desktop file chooser)
     try {
       final fs = FileSelectorService();
       final XFile? picked = await fs.pickSingleFile(
@@ -552,176 +461,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       );
 
-      if (picked != null) {
-        final content = await picked.readAsString();
-        await _processImportedContent(content);
+      if (picked == null) {
+        // User canceled
         return;
       }
+
+      final content = await picked.readAsString();
+      await _processImportedContent(content);
     } catch (e) {
-      // If the file selector fails or is unavailable on a platform, fall back to exports-folder listing below.
-      debugPrint('file_selector not available or failed: $e');
-    }
-
-    // Look for exported JSON files in the app exports directory
-    final dir = await FileUtils.getExportsDirectory();
-    final files = Directory(dir.path)
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.toLowerCase().endsWith('.json'))
-        .toList();
-
-    if (files.isEmpty) {
+      if (!mounted) return;
       await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('No import files found'),
-          content: Text(
-            'No JSON files were found in the app exports folder:\n${dir.path}\n\nPlease place your export JSON file there and try again.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    // Let user choose one of the discovered JSON files
-    final selected = await showDialog<File?>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        title: const Text('Select import file'),
-        children: files.map((f) {
-          final name = f.uri.pathSegments.last;
-          return SimpleDialogOption(
-            onPressed: () => Navigator.of(ctx).pop(f),
-            child: Text(name),
-          );
-        }).toList(),
-      ),
-    );
-
-    if (selected == null) return;
-
-    final content = await selected.readAsString();
-
-    // Warn user about overwrite
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Import Data'),
-        content: const Text(
-          'Importing will overwrite the app data. Please back up current data first. Continue?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    try {
-      final Map<String, dynamic> payload =
-          json.decode(content) as Map<String, dynamic>;
-
-      // Clear existing in-memory data (excluding templates and special lessons)
-      DatabaseService.subjects.clear();
-      DatabaseService.books.clear();
-      DatabaseService.lessons.clear();
-
-      // Restore subjects
-      if (payload['subjects'] is List) {
-        for (final item in (payload['subjects'] as List)) {
-          final s = Subject(
-            id: item['id'] as int,
-            name: item['name'] as String,
-            bookIds: List<int>.from(item['bookIds'] ?? []),
-            colorValue: item['colorValue'] as int?,
-          );
-          DatabaseService.subjects.add(s);
-        }
-      }
-
-      // Books
-      if (payload['books'] is List) {
-        for (final item in (payload['books'] as List)) {
-          final b = Book(
-            id: item['id'] as int,
-            subjectId: item['subjectId'] as int,
-            description: item['description'] as String?,
-            createdAt: item['createdAt'] != null
-                ? DateTime.parse(item['createdAt'] as String)
-                : DateTime.now(),
-          );
-          DatabaseService.books.add(b);
-        }
-      }
-
-      // Lessons
-      if (payload['lessons'] is List) {
-        for (final item in (payload['lessons'] as List)) {
-          final l = Lesson(
-            id: item['id'] as String,
-            subjectId: item['subjectId'] as int,
-            dayOfWeek: item['dayOfWeek'] as int,
-            startHour: item['startHour'] as int,
-            startMinute: item['startMinute'] as int,
-            endHour: item['endHour'] as int,
-            endMinute: item['endMinute'] as int,
-            recurrenceType:
-                RecurrenceType.values[item['recurrenceType'] as int],
-            customIntervalWeeks: item['customIntervalWeeks'] as int?,
-            startDate: item['startDate'] != null
-                ? DateTime.parse(item['startDate'] as String)
-                : null,
-            templateId: item['templateId'] as String?,
-            notes: item['notes'] as String?,
-            weekNumber: item['weekNumber'] as int? ?? 0,
-          );
-          DatabaseService.lessons.add(l);
-        }
-      }
-
-      // Templates and special lessons are no longer imported here
-
-      // Settings
-      if (payload['settings'] is Map) {
-        DatabaseService.settings
-          ..clear()
-          ..addAll(Map<String, dynamic>.from(payload['settings'] as Map));
-      }
-
-      await DatabaseService.save();
-
-      // Refresh UI
-      setState(() {});
-      // Notify DatabaseService listeners indirectly via TimetableService/others when user navigates
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Import Successful'),
-          content: const Text('Data imported successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Import Failed'),
@@ -834,7 +583,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await DatabaseService.save();
 
       // Refresh UI
+      if (!mounted) return;
       setState(() {});
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -849,6 +600,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -1014,7 +766,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
                           final created = await bookService
                               .recreateMissingBooksFromSubjects();
+                          if (!mounted) return; // before pop
+                          // ignore: use_build_context_synchronously
                           Navigator.of(context).pop();
+                          if (!mounted) return; // before snackbar
+                          // ignore: use_build_context_synchronously
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -1050,12 +806,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   DatabaseService.settings['hasSeenTutorial'] = false;
                   await DatabaseService.save();
                   // Immediately show the tutorial now.
+                  if (!mounted) return; // before accessing context
+                  // ignore: use_build_context_synchronously
                   final timetable = context.read<TimetableService>();
                   final hasLessons = timetable.lessons.isNotEmpty;
                   final usesWeekNumbers = timetable.lessons.any(
                     (l) => l.weekNumber != 0,
                   );
+                  if (!mounted) return; // before showDialog
+                  // ignore: use_build_context_synchronously
                   await showDialog<void>(
+                    // ignore: use_build_context_synchronously
                     context: context,
                     barrierDismissible: true,
                     builder: (context) {
