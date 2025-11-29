@@ -488,7 +488,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mimeType: 'application/json',
           bytes: Uint8List.fromList(utf8.encode(jsonStr)),
         );
-        final savedPath = saved?.path ?? '${dir.path}${Platform.pathSeparator}$fileName';
+        final savedPath =
+            saved?.path ?? '${dir.path}${Platform.pathSeparator}$fileName';
         if (saved == null) {
           final file = File(savedPath);
           await file.writeAsString(jsonStr);

@@ -271,8 +271,8 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
         mimeType: 'image/png',
         bytes: bytes,
       );
-      final filePath = saved?.path ??
-          '${directory.path}${Platform.pathSeparator}$fileName';
+      final filePath =
+          saved?.path ?? '${directory.path}${Platform.pathSeparator}$fileName';
       if (saved == null) {
         final file = File(filePath);
         await file.writeAsBytes(bytes);
