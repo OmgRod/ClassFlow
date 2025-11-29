@@ -259,7 +259,10 @@ class _TimetableScreenState extends State<TimetableScreen> {
             ),
             IconTextRow(icon: Icons.repeat, text: _getRecurrenceText(lesson)),
             if (lesson.weekNumber > 0)
-              IconTextRow(icon: Icons.view_week, text: 'Week ${lesson.weekNumber}'),
+              IconTextRow(
+                icon: Icons.view_week,
+                text: 'Week ${lesson.weekNumber}',
+              ),
             if (lesson.notes != null && lesson.notes!.isNotEmpty)
               IconTextRow(icon: Icons.note, text: lesson.notes!),
             const SizedBox(height: 24),

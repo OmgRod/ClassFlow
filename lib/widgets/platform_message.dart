@@ -15,16 +15,14 @@ class PlatformUnsupportedMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(feature),
-        leading: const BackButton(),
-      ),
+      appBar: AppBar(title: Text(feature), leading: const BackButton()),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: EmptyState(
           icon: Icons.desktop_access_disabled,
           title: '$feature Not Available',
-          subtitle: 'This feature is currently only available on mobile devices (Android & iOS).\n\n$alternative',
+          subtitle:
+              'This feature is currently only available on mobile devices (Android & iOS).\n\n$alternative',
         ),
       ),
     );

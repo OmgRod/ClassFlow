@@ -19,10 +19,7 @@ class InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final card = Card(
       color: color,
-      child: Padding(
-        padding: padding!,
-        child: child,
-      ),
+      child: Padding(padding: padding!, child: child),
     );
 
     if (onTap != null) {

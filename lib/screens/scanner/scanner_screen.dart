@@ -63,7 +63,8 @@ class _ScannerScreenState extends State<ScannerScreen> {
           child: EmptyState(
             icon: Icons.qr_code_scanner,
             title: 'Scanner Not Available',
-            subtitle: 'The QR code scanner is currently only available on mobile devices (Android & iOS).\n\nOn desktop, you can manually find books in the Books tab by browsing through subjects.',
+            subtitle:
+                'The QR code scanner is currently only available on mobile devices (Android & iOS).\n\nOn desktop, you can manually find books in the Books tab by browsing through subjects.',
           ),
         ),
       );

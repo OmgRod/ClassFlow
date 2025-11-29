@@ -19,7 +19,10 @@ class ColorAvatar extends StatelessWidget {
     this.borderWidth = 2,
     this.fontSize = 28,
     super.key,
-  }) : assert(text != null || icon != null, 'Either text or icon must be provided');
+  }) : assert(
+         text != null || icon != null,
+         'Either text or icon must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +32,9 @@ class ColorAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(borderRadius),
-        border: borderWidth != null ? Border.all(color: color, width: borderWidth!) : null,
+        border: borderWidth != null
+            ? Border.all(color: color, width: borderWidth!)
+            : null,
       ),
       child: Center(
         child: icon != null

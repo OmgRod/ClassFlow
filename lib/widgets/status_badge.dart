@@ -29,10 +29,7 @@ class StatusBadge extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.w600),
           ),
           if (showDropdown) const Icon(Icons.arrow_drop_down, size: 18),
         ],
