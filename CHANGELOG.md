@@ -3,6 +3,7 @@
 ## v0.2.1
 
 - [BUGFIX] Fixed app icon on iOS (I think too)
+- [BUGFIX] Fixed an issue importing saves on iOS
 
 ## v0.2.0
 

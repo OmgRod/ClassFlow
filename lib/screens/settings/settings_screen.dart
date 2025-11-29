@@ -456,9 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final fs = FileSelectorService();
       final XFile? picked = await fs.pickSingleFile(
-        typeGroups: [
-          const XTypeGroup(label: 'json', extensions: ['json']),
-        ],
+        typeGroups: [fs.jsonTypeGroup()],
       );
 
       if (picked == null) {
