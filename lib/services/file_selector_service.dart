@@ -48,13 +48,31 @@ class FileSelectorService {
     return XFile(file.path);
   }
 
+  // Image type group (adds UTType identifiers for iOS/macOS for reliability)
   XTypeGroup imagesTypeGroup() => const XTypeGroup(
     label: 'images',
     extensions: <String>['jpg', 'jpeg', 'png'],
+    uniformTypeIdentifiers: <String>['public.jpeg', 'public.png'],
   );
 
-  XTypeGroup pdfTypeGroup() =>
-      const XTypeGroup(label: 'pdf', extensions: <String>['pdf']);
+  // PDF type group
+  XTypeGroup pdfTypeGroup() => const XTypeGroup(
+    label: 'pdf',
+    extensions: <String>['pdf'],
+    uniformTypeIdentifiers: <String>['com.adobe.pdf'],
+  );
 
-  XTypeGroup anyTypeGroup() => const XTypeGroup(label: 'any');
+  // JSON type group (used when importing/exporting settings/data)
+  XTypeGroup jsonTypeGroup() => const XTypeGroup(
+    label: 'json',
+    extensions: <String>['json'],
+    uniformTypeIdentifiers: <String>['public.json'],
+  );
+
+  // Accept any file. On iOS the plugin requires either explicit UTIs or allow-all.
+  // Using 'public.item' covers any regular file.
+  XTypeGroup anyTypeGroup() => const XTypeGroup(
+    label: 'any',
+    uniformTypeIdentifiers: <String>['public.item'],
+  );
 }
