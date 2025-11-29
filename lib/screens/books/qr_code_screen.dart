@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:io';
+import '../../services/file_selector_service.dart';
 import '../../models/models.dart';
 import '../../utils/constants.dart';
 import '../../utils/theme.dart';
@@ -263,16 +264,27 @@ class _QrCodeScreenState extends State<QrCodeScreen> {
 
       final fileName =
           'qr_${code.replaceAll('-', '_')}_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${directory.path}${Platform.pathSeparator}$fileName');
-      await file.writeAsBytes(bytes);
+      // Offer user-chosen save location via FileSelectorService; fallback to app directory
+      final fs = FileSelectorService();
+      final saved = await fs.saveFile(
+        suggestedName: fileName,
+        mimeType: 'image/png',
+        bytes: bytes,
+      );
+      final filePath = saved?.path ??
+          '${directory.path}${Platform.pathSeparator}$fileName';
+      if (saved == null) {
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('QR code saved to: ${file.path}'),
+            content: Text('QR code saved to: $filePath'),
             action: SnackBarAction(
               label: 'Share',
-              onPressed: () => _shareFile(file.path),
+              onPressed: () => _shareFile(filePath),
             ),
           ),
         );

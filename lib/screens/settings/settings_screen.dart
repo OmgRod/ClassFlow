@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:intl/intl.dart';
 import 'package:file_selector/file_selector.dart';
+import '../../services/file_selector_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
 // share_plus not used for direct save; keep dependency available if sharing later
@@ -480,16 +481,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
         }
 
-        // Fallback: write to chosen directory or app documents
-        final file = File('${dir.path}${Platform.pathSeparator}$fileName');
-        await file.writeAsString(jsonStr);
+        // Fallback: prompt user for save location via FileSelectorService, else write to app documents
+        final fs = FileSelectorService();
+        final saved = await fs.saveFile(
+          suggestedName: fileName,
+          mimeType: 'application/json',
+          bytes: Uint8List.fromList(utf8.encode(jsonStr)),
+        );
+        final savedPath = saved?.path ?? '${dir.path}${Platform.pathSeparator}$fileName';
+        if (saved == null) {
+          final file = File(savedPath);
+          await file.writeAsString(jsonStr);
+        }
 
-        // Saved to file; inform the user of location
+        // Saved; inform the user of location
         await showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Export Saved'),
-            content: Text('Export saved to:\n${file.path}'),
+            content: Text('Export saved to:\n$savedPath'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -534,9 +544,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _importData() async {
     // First try the platform-native file selector (Android SAF / iOS document picker / desktop file chooser)
     try {
-      final XFile? picked = await openFile(
-        acceptedTypeGroups: [
-          XTypeGroup(label: 'json', extensions: ['json']),
+      final fs = FileSelectorService();
+      final XFile? picked = await fs.pickSingleFile(
+        typeGroups: [
+          const XTypeGroup(label: 'json', extensions: ['json']),
         ],
       );
 
