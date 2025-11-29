@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1
+
+- [BUGFIX] Fixed app icon on iOS (I think too)
+
 ## v0.2.0
 
 - [REFACTOR] Created reusable component library to reduce code duplication
