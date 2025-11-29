@@ -18,9 +18,11 @@ RequestExecutionLevel admin
 ; Use modern UI
 !include MUI2.nsh
 
-; Icon (optional)
-!define MUI_ICON "windows/runner/resources/app_icon.ico"
-!define MUI_HEADERIMAGE
+; Icon (optional) - path relative to this script directory (installer/windows)
+; Adjust to reach actual icon under repo/windows/runner/resources
+!define MUI_ICON "..\..\windows\runner\resources\app_icon.ico"
+Icon "..\..\windows\runner\resources\app_icon.ico"
+UninstallIcon "..\..\windows\runner\resources\app_icon.ico"
 
 ; Pages
 !insertmacro MUI_PAGE_WELCOME
