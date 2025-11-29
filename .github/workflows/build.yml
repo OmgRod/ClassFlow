@@ -72,7 +72,7 @@ jobs:
           name: classflow-linux
           path: classflow-linux.zip
 
-  build-windows:
+  build-windows-portable:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,78 +81,64 @@ jobs:
           channel: stable
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
-      - name: Reconstruct PFX from base64 secret
+      - run: flutter build windows --release
+      - name: Upload portable Release folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: classflow-windows-portable
+          path: build/windows/x64/runner/Release
+
+  build-windows-msix:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - name: Setup Windows SDK for signtool
+        uses: microsoft/setup-msbuild@v2
+      - name: Build unsigned MSIX
         shell: powershell
         run: |
-          if (-not $env:SIGN_CERT) { throw 'SIGN_CERT (base64 PFX) env variable not set.' }
+          flutter pub run msix:create
+      - name: Reconstruct PFX from base64 secret
+        if: env.SIGN_CERT != ''
+        shell: powershell
+        run: |
           $pfxPath = Join-Path $PWD 'omgrod-code-signing.pfx'
           [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:SIGN_CERT))
           Write-Host "Wrote PFX to $pfxPath"
-      - name: MSIX + Portable build
-        shell: powershell
-        run: |
-          # Build unsigned MSIX (no cert config in pubspec)
-          flutter pub run msix:create
-      - name: Locate signtool.exe
-        shell: powershell
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
-          if ($signtool) { echo "SIGNSRC=$($signtool.Path)" >> $env:GITHUB_ENV; exit 0 }
-          # Try Visual Studio installation via vswhere
-          $vswhere = "$Env:ProgramFiles(x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-          if (Test-Path $vswhere) {
-            $vs = & $vswhere -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
-            if ($vs) {
-              $candidate = Join-Path $vs "Common7\Tools\vsdevcmd.bat"
-              if (Test-Path $candidate) { cmd /c "$candidate & where signtool" | ForEach-Object { if (Test-Path $_) { echo "SIGNSRC=$_" >> $env:GITHUB_ENV } } }
-            }
-          }
-          # Search Windows Kits folders
-          $kits = @("$Env:ProgramFiles(x86)\Windows Kits\10\bin", "$Env:ProgramFiles\Windows Kits\10\bin")
-          foreach ($k in $kits) {
-            if (Test-Path $k) {
-              $found = Get-ChildItem -Path $k -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($found) { echo "SIGNSRC=$($found.FullName)" >> $env:GITHUB_ENV; break }
-            }
-          }
-          if (-not $env:SIGNSRC) {
-            Write-Host 'signtool not found; installing Windows SDK via winget'
-            try {
-              winget install --id Microsoft.WindowsSDK -e --source winget --silent
-            } catch {
-              Write-Host 'winget install failed or unavailable.'
-            }
-            $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
-            if ($signtool) { echo "SIGNSRC=$($signtool.Path)" >> $env:GITHUB_ENV }
-          }
-          if (-not $env:SIGNSRC) { throw 'signtool.exe not found after attempts.' }
       - name: Sign MSIX via signtool
-        if: success()
+        if: env.SIGN_CERT != '' && env.SIGN_CERT_PASSWORD != ''
         shell: powershell
         run: |
           $msix = 'build/windows/x64/runner/Release/classflow.msix'
           if (-not (Test-Path $msix)) { throw "MSIX not found at $msix" }
-          if (-not $env:SIGN_CERT_PASSWORD) { throw 'SIGN_CERT_PASSWORD secret not set' }
-          $signtoolPath = $env:SIGNSRC
-          if (-not $signtoolPath) { throw 'signtool path environment variable SIGNSRC not set' }
-          & "$signtoolPath" sign /fd sha256 /f omgrod-code-signing.pfx /p $env:SIGN_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 $msix
+          # Find signtool from Windows SDK
+          $kits = @("${env:ProgramFiles(x86)}\Windows Kits\10\bin", "${env:ProgramFiles}\Windows Kits\10\bin")
+          $signtool = $null
+          foreach ($k in $kits) {
+            if (Test-Path $k) {
+              $found = Get-ChildItem -Path $k -Recurse -Filter signtool.exe -ErrorAction SilentlyContinue | 
+                       Sort-Object FullName -Descending | Select-Object -First 1
+              if ($found) { $signtool = $found.FullName; break }
+            }
+          }
+          if (-not $signtool) {
+            $signtool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Path
+          }
+          if (-not $signtool) { throw 'signtool.exe not found. Ensure Windows SDK is installed.' }
+          Write-Host "Using signtool: $signtool"
+          & "$signtool" sign /fd sha256 /f omgrod-code-signing.pfx /p $env:SIGN_CERT_PASSWORD /tr http://timestamp.digicert.com /td sha256 $msix
+          if ($LASTEXITCODE -ne 0) { throw "signtool signing failed with exit code $LASTEXITCODE" }
           Write-Host 'MSIX signed successfully.'
       - name: Upload MSIX installer
         uses: actions/upload-artifact@v4
         with:
           name: classflow-windows-msix
           path: build/windows/x64/runner/Release/classflow.msix
-      - name: Remove MSIX before portable upload
-        shell: powershell
-        run: |
-          $msix = 'build/windows/x64/runner/Release/classflow.msix'
-          if (Test-Path $msix) { Remove-Item $msix -Force }
-      - name: Upload portable Release folder
-        uses: actions/upload-artifact@v4
-        with:
-          name: classflow-windows-portable
-          path: build/windows/x64/runner/Release
 
   build-macos:
     runs-on: macos-latest
