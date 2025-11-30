@@ -85,27 +85,27 @@ jobs:
           name: classflow-windows-portable
           path: build/windows/x64/runner/Release
 
-  build-windows-nsis:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - run: flutter config --enable-windows-desktop
-      - run: flutter pub get
-      - run: flutter build windows --release
-      - name: Install NSIS
-        run: choco install nsis -y
-      - name: Build NSIS installer
-        shell: cmd
-        run: |
-          "C:\Program Files (x86)\NSIS\makensis.exe" installer\windows\classflow.nsi
-      - name: Upload NSIS installer
-        uses: actions/upload-artifact@v4
-        with:
-          name: classflow-windows-nsis
-          path: classflow-setup-0.2.0.exe
+  # build-windows-nsis:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         channel: stable
+  #     - run: flutter config --enable-windows-desktop
+  #     - run: flutter pub get
+  #     - run: flutter build windows --release
+  #     - name: Install NSIS
+  #       run: choco install nsis -y
+  #     - name: Build NSIS installer
+  #       shell: cmd
+  #       run: |
+  #         "C:\Program Files (x86)\NSIS\makensis.exe" installer\windows\classflow.nsi
+  #     - name: Upload NSIS installer
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: classflow-windows-nsis
+  #         path: classflow-setup-0.2.0.exe
 
   build-macos:
     runs-on: macos-latest
