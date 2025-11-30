@@ -16,6 +16,8 @@ import '../../services/theme_service.dart';
 import '../../services/timetable_service.dart';
 import '../../main.dart' show TutorialDialog;
 import '../../models/models.dart';
+import 'export_screen.dart';
+import 'theme_customization_screen.dart';
 // removed file_utils usage after simplifying import/export to file picker only
 
 class SettingsScreen extends StatefulWidget {
@@ -684,6 +686,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                   onChanged: (v) => _setThemeMode(v ?? 'system'),
                 ),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Customize Theme Colors'),
+                subtitle: const Text('Personalize your app\'s color scheme'),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ThemeCustomizationScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                title: const Text('Export Timetable'),
+                subtitle: const Text('Export to CSV or iCal format'),
+                trailing: const Icon(Icons.arrow_forward),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ExportScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 8),
               Row(

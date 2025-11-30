@@ -77,6 +77,14 @@ class SubjectService extends ChangeNotifier {
     }
   }
 
+  /// Reorder subjects
+  Future<void> reorderSubjects(List<Subject> newOrder) async {
+    DatabaseService.subjects.clear();
+    DatabaseService.subjects.addAll(newOrder);
+    await DatabaseService.save();
+    _loadSubjects();
+  }
+
   /// Add book ID to subject
   Future<void> addBookToSubject(int subjectId, int bookId) async {
     final subject = getSubjectById(subjectId);

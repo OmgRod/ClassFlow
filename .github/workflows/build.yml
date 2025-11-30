@@ -105,7 +105,7 @@ jobs:
   #       uses: actions/upload-artifact@v4
   #       with:
   #         name: classflow-windows-nsis
-  #         path: classflow-setup-0.2.0.exe
+  #         path: classflow-setup-1.0.0.exe
 
   build-macos:
     runs-on: macos-latest

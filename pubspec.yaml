@@ -1,7 +1,7 @@
 name: classflow
 description: "ClassFlow - Manage your classes, books and timetable with QR codes."
 publish_to: 'none'
-version: 0.2.0
+version: 1.0.0
 
 environment:
   sdk: ^3.9.2
@@ -46,9 +46,6 @@ dependencies:
   printing: ^5.10.1
   barcode: ^2.1.0
 
-  # Windows installer packaging (NSIS via makensis)
-  # No pub dependency required; packaged in CI with NSIS
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -58,6 +55,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
-# Windows NSIS installer is configured via `installer/windows/classflow.nsi`
-# and built in CI using makensis. No msix_config section is needed.

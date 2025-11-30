@@ -3,19 +3,40 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/theme.dart';
+import '../../utils/page_transitions.dart';
 import '../../widgets/widgets.dart';
 import 'subject_form_screen.dart';
+import 'subjects_batch_screen.dart';
+import 'subjects_reorder_screen.dart';
 
-class SubjectsScreen extends StatelessWidget {
+class SubjectsScreen extends StatefulWidget {
   const SubjectsScreen({super.key});
+
+  @override
+  State<SubjectsScreen> createState() => _SubjectsScreenState();
+}
+
+class _SubjectsScreenState extends State<SubjectsScreen> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
     return Consumer<SubjectService>(
       builder: (context, subjectService, child) {
-        final subjects = subjectService.subjects;
+        final allSubjects = subjectService.subjects;
+        final subjects = _searchQuery.isEmpty
+            ? allSubjects
+            : allSubjects
+                  .where(
+                    (s) =>
+                        s.name.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        s.id.toString().contains(_searchQuery),
+                  )
+                  .toList();
 
-        if (subjects.isEmpty) {
+        if (allSubjects.isEmpty) {
           return EmptyState(
             icon: Icons.subject_outlined,
             title: 'No subjects yet',
@@ -30,18 +51,75 @@ class SubjectsScreen extends StatelessWidget {
 
         return Stack(
           children: [
-            ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: subjects.length,
-              itemBuilder: (context, index) {
-                final subject = subjects[index];
-                return _SubjectCard(
-                  subject: subject,
-                  onTap: () => _navigateToEditSubject(context, subject),
-                  onDelete: () =>
-                      _confirmDelete(context, subject, subjectService),
-                );
-              },
+            Column(
+              children: [
+                // Search bar and batch operations
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) =>
+                              setState(() => _searchQuery = value),
+                          decoration: InputDecoration(
+                            hintText: 'Search subjects...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () =>
+                                        setState(() => _searchQuery = ''),
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        icon: const Icon(Icons.checklist),
+                        tooltip: 'Batch Operations',
+                        onPressed: () => _navigateToBatchOperations(context),
+                      ),
+                      IconButton.filled(
+                        icon: const Icon(Icons.reorder),
+                        tooltip: 'Reorder Subjects',
+                        onPressed: () => _navigateToReorder(context),
+                      ),
+                    ],
+                  ),
+                ),
+                // Results
+                Expanded(
+                  child: subjects.isEmpty
+                      ? EmptyState(
+                          icon: Icons.search_off,
+                          title: 'No subjects found',
+                          subtitle: 'Try a different search term',
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: subjects.length,
+                          itemBuilder: (context, index) {
+                            final subject = subjects[index];
+                            return _SubjectCard(
+                              subject: subject,
+                              onTap: () =>
+                                  _navigateToEditSubject(context, subject),
+                              onDelete: () => _confirmDelete(
+                                context,
+                                subject,
+                                subjectService,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
             Positioned(
               bottom: 16,
@@ -59,18 +137,24 @@ class SubjectsScreen extends StatelessWidget {
   }
 
   void _navigateToAddSubject(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SubjectFormScreen()),
-    );
+    Navigator.push(context, SlidePageRoute(page: const SubjectFormScreen()));
   }
 
   void _navigateToEditSubject(BuildContext context, Subject subject) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => SubjectFormScreen(subject: subject),
-      ),
+      SlidePageRoute(page: SubjectFormScreen(subject: subject)),
+    );
+  }
+
+  void _navigateToBatchOperations(BuildContext context) {
+    Navigator.push(context, SlidePageRoute(page: const SubjectsBatchScreen()));
+  }
+
+  void _navigateToReorder(BuildContext context) {
+    Navigator.push(
+      context,
+      SlidePageRoute(page: const SubjectsReorderScreen()),
     );
   }
 

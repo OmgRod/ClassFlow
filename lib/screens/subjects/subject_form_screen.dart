@@ -64,11 +64,35 @@ class _SubjectFormScreenState extends State<SubjectFormScreen> {
                 labelText: 'Subject Name',
                 hintText: 'e.g., MATHS, ENGLISH, PHYSICS',
                 helperText: 'Will be converted to UPPERCASE with no spaces',
+                prefixIcon: Icon(Icons.subject),
               ),
               textCapitalization: TextCapitalization.characters,
+              maxLength: 50,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a subject name';
+                  return '⚠️ Subject name is required';
+                }
+                final trimmed = value.trim();
+                if (trimmed.length < 2) {
+                  return '⚠️ Subject name must be at least 2 characters';
+                }
+                if (trimmed.length > 50) {
+                  return '⚠️ Subject name must be 50 characters or less';
+                }
+                // Check for duplicate names (case-insensitive)
+                final subjectService = Provider.of<SubjectService>(
+                  context,
+                  listen: false,
+                );
+                final existingSubject = subjectService.subjects.firstWhere(
+                  (s) =>
+                      s.name.toUpperCase() == trimmed.toUpperCase() &&
+                      s.id != widget.subject?.id,
+                  orElse: () =>
+                      Subject(id: -1, name: '', colorValue: 0, bookIds: []),
+                );
+                if (existingSubject.id != -1) {
+                  return '⚠️ A subject with this name already exists';
                 }
                 return null;
               },

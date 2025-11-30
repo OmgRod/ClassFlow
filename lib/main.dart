@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'services/services.dart';
 import 'services/theme_service.dart';
 import 'screens/screens.dart';
-import 'utils/theme.dart';
 import 'utils/constants.dart';
+import 'widgets/widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,11 +12,17 @@ void main() async {
   // Initialize database
   await DatabaseService.initialize();
 
-  runApp(const ClassFlowApp());
+  // Initialize custom theme service
+  final customThemeService = CustomThemeService();
+  await customThemeService.init();
+
+  runApp(ClassFlowApp(customThemeService: customThemeService));
 }
 
 class ClassFlowApp extends StatelessWidget {
-  const ClassFlowApp({super.key});
+  final CustomThemeService customThemeService;
+
+  const ClassFlowApp({super.key, required this.customThemeService});
 
   @override
   Widget build(BuildContext context) {
@@ -26,13 +32,23 @@ class ClassFlowApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BookService()),
         ChangeNotifierProvider(create: (_) => TimetableService()),
         ChangeNotifierProvider(create: (_) => ThemeService()),
+        ChangeNotifierProvider(create: (_) => LessonTemplateService()),
+        ChangeNotifierProvider(create: (_) => BreakTimeService()),
+        ChangeNotifierProvider(create: (_) => ArchiveService()),
+        ChangeNotifierProvider(create: (_) => ReminderService()),
+        ChangeNotifierProvider(create: (_) => OnboardingService()),
+        ChangeNotifierProvider(create: (_) => TimezoneService()),
+        ChangeNotifierProvider(create: (_) => BackupService()),
+        ChangeNotifierProvider(create: (_) => GradebookService()),
+        ChangeNotifierProvider(create: (_) => UndoRedoService()),
+        ChangeNotifierProvider.value(value: customThemeService),
       ],
-      child: Consumer<ThemeService>(
-        builder: (context, themeService, _) {
+      child: Consumer2<ThemeService, CustomThemeService>(
+        builder: (context, themeService, customThemeService, _) {
           return MaterialApp(
             title: AppConstants.appName,
-            theme: AppTheme.lightTheme,
-            darkTheme: ThemeData.dark(),
+            theme: customThemeService.getLightTheme(),
+            darkTheme: customThemeService.getDarkTheme(),
             themeMode: themeService.mode,
             debugShowCheckedModeBanner: false,
             home: const _RootWithOnboarding(),

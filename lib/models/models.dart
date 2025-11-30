@@ -1,5 +1,10 @@
 export 'subject.dart';
 export 'book.dart';
 export 'lesson.dart';
+export 'lesson_status.dart';
 export 'lesson_template.dart';
 export 'special_lesson.dart';
+export 'break_time.dart';
+export 'archived_item.dart';
+export 'lesson_reminder.dart';
+export 'grade.dart';

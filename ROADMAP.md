@@ -4,29 +4,42 @@ This roadmap outlines planned features and improvements for ClassFlow. Items are
 
 ---
 
-## 🚀 Version 0.3.0 - Quick Wins & Polish
+## 🚀 Version 1.0.0 - Quick Wins & Polish
 
 ### UI/UX Improvements
 
-- [ ] **Search & filtering** - Add search bars to subjects, books, and timetable lists
-- [ ] **Batch operations** - Enable multi-select for bulk delete/edit of subjects and books
-- [ ] **Onboarding improvements** - Add interactive tutorial for first-time users (beyond current modal)
-- [ ] **Accessibility enhancements** - Improve screen reader support, semantic labels, and contrast ratios
-- [ ] **Animations & transitions** - Polish page transitions and add subtle micro-interactions
+- [x] **Search & filtering** - Add search bars to subjects, books, and timetable lists
+- [x] **Batch operations** - Enable multi-select for bulk delete/edit of subjects and books
+- [x] **Onboarding improvements** - Interactive step-by-step coach marks with OnboardingService (OnboardingCoach)
+- [x] **Accessibility enhancements** - AccessibilityUtils with semantic labels, ContrastChecker for WCAG compliance (color contrast fixes)
+- [x] **Animations & transitions** - Slide/Fade/Scale routes in `page_transitions.dart`
 
 ### Data Management
 
-- [ ] **Backup & restore to cloud** - iCloud/Google Drive integration for automatic backups
-- [ ] **Data validation** - Add stricter input validation and error messages for malformed data
-- [ ] **Undo/redo functionality** - Implement action history for accidental deletions
-- [ ] **Archive system** - Archive old subjects/books instead of permanently deleting
+- [x] **Backup & restore to cloud** - BackupService with local/iCloud/Google Drive support (`services/backup_service.dart`)
+- [x] **Data validation** - Comprehensive Validators class with detailed error messages for all inputs (`utils/validators.dart`)
+- [x] **Undo/redo functionality** - UndoRedoService with action history for delete, update, and batch operations
+- [x] **Archive system** - ArchiveService for archiving/restoring subjects, books, and lessons
 
 ### Timetable Enhancements
 
-- [ ] **Today view widget** - Show today's schedule prominently on home screen
-- [ ] **Lesson notes** - Add optional notes field to lessons for homework/reminders
-- [ ] **Break time blocks** - Explicitly add break/lunch periods to timetable
-- [ ] **Time zone support** - Handle timetable display for users traveling across time zones
+- [x] **Today view widget** - Show today's schedule prominently on home screen
+- [x] **Lesson notes** - Add optional notes field to lessons for homework/reminders
+- [x] **Page transitions & animations** - Smooth navigation with slide/scale/fade transitions
+- [x] **Enhanced form validation** - Better error messages with duplicate detection and character limits
+- [x] **Today view statistics** - Summary cards showing lesson count, next lesson, and free time
+- [x] **Lesson status indicators** - Mark lessons as cancelled, modified, or rescheduled
+- [ ] **Cloud sync & accounts** - User accounts with cloud storage for data sync across devices
+- [ ] **Server selection** - Custom server configuration for self-hosted or official cloud servers
+- [ ] **Account management** - Change password, email, enable 2FA, manage sync settings
+- [ ] **Offline-first sync** - Queue local changes and sync when connection is available
+- [ ] **Conflict resolution** - Smart merging when same data is modified on multiple devices
+- [x] **Export formats** - Export timetable to CSV and iCal formats with share integration (InfoCard and error handling polished)
+- [x] **Theme customization** - Custom color themes with 8 presets and color picker (preview card fixed)
+- [x] **Drag & drop** - Reorder subjects with drag & drop using ReorderableListView
+- [x] **Lesson templates** - Save and reuse common lesson patterns with template manager
+- [x] **Break time blocks** - Explicitly add break/lunch periods to timetable with dedicated service
+- [x] **Time zone support** - TimezoneService with auto-detection and conversion for travelers
 
 ---
 
@@ -42,7 +55,7 @@ This roadmap outlines planned features and improvements for ClassFlow. Items are
 
 ### Notifications & Reminders
 
-- [ ] **Lesson reminders** - Push notifications X minutes before lessons start
+- [x] **Lesson reminders** - ReminderService with configurable notifications before lessons
 - [ ] **Assignment deadlines** - Track and notify about homework/assignment due dates
 - [ ] **Custom alerts** - User-defined notifications (e.g., "Bring textbook for Monday's class")
 - [ ] **Do Not Disturb mode** - Auto-silence during lessons
@@ -60,14 +73,14 @@ This roadmap outlines planned features and improvements for ClassFlow. Items are
 
 ### Grade & Assignment Tracking
 
-- [ ] **Gradebook** - Track grades/scores per subject with weighted categories
+- [x] **Gradebook** - GradebookService with weighted categories, GPA calculation, and grade statistics (`models/grade.dart`, `services/gradebook_service.dart`, `screens/settings/gradebook_screen.dart`)
 - [ ] **Assignment manager** - Add homework/project tasks with due dates and completion tracking
 - [ ] **GPA calculator** - Calculate semester/cumulative GPA based on grades
 - [ ] **Progress reports** - Visual charts showing performance trends over time
 
 ### Study Tools
 
-- [ ] **Study timer** - Pomodoro-style timer linked to subjects
+- [x] **Study timer** - StudyTimerService with Pomodoro technique, break tracking, and session counter (`services/study_timer_service.dart`, `screens/settings/study_timer_screen.dart`)
 - [ ] **Flashcards** - Create and review flashcards per subject
 - [ ] **Note-taking** - In-app markdown notes attached to subjects or lessons
 - [ ] **Calendar integration** - Sync lessons and assignments with device calendar (Google Calendar, Apple Calendar)
@@ -158,15 +171,5 @@ Have an idea not listed here? Open an issue or discussion on GitHub! We welcome 
 
 ---
 
-## Legend
-
-- ✅ Completed
-- 🚧 In Progress
-- 📅 Planned
-- 💡 Under Consideration
-- ❌ Deprioritized/Cancelled
-
----
-
 **Last Updated:** November 30, 2025  
-**Current Version:** 0.2.0
+**Current Version:** 1.0.0

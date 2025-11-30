@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/models.dart';
 import '../../services/services.dart';
 import '../../utils/theme.dart';
+import '../../utils/page_transitions.dart';
 import '../../widgets/widgets.dart';
 import 'qr_code_screen.dart';
 import '../../services/qr_pdf_service.dart';
@@ -18,6 +19,7 @@ class _BooksScreenState extends State<BooksScreen> {
   // Selection key: "<subjectId>:<bookId>"
   final Set<String> _selected = {};
   double _scale = 0.2; // fraction of page width for each QR
+  String _searchQuery = '';
 
   String _keyFor(int subjectId, int bookId) => '$subjectId:$bookId';
 
@@ -105,9 +107,9 @@ class _BooksScreenState extends State<BooksScreen> {
   Widget build(BuildContext context) {
     return Consumer2<SubjectService, BookService>(
       builder: (context, subjectService, bookService, child) {
-        final subjects = subjectService.subjects;
+        final allSubjects = subjectService.subjects;
 
-        if (subjects.isEmpty) {
+        if (allSubjects.isEmpty) {
           return const EmptyState(
             icon: Icons.book_outlined,
             title: 'No subjects with books',
@@ -115,12 +117,29 @@ class _BooksScreenState extends State<BooksScreen> {
           );
         }
 
+        // Filter subjects by search query
+        final subjects = _searchQuery.isEmpty
+            ? allSubjects
+            : allSubjects
+                  .where(
+                    (s) =>
+                        s.name.toLowerCase().contains(
+                          _searchQuery.toLowerCase(),
+                        ) ||
+                        s.bookIds.any(
+                          (b) => b.toString().contains(_searchQuery),
+                        ),
+                  )
+                  .toList();
+
         // Group books by subject
         final subjectsWithBooks = subjects
             .where((s) => s.bookIds.isNotEmpty)
             .toList();
 
-        if (subjectsWithBooks.isEmpty) {
+        final hasAnyBooks = allSubjects.any((s) => s.bookIds.isNotEmpty);
+
+        if (!hasAnyBooks) {
           return const EmptyState(
             icon: Icons.book_outlined,
             title: 'No books added',
@@ -181,17 +200,51 @@ class _BooksScreenState extends State<BooksScreen> {
                 ),
             ],
           ),
-          body: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: subjectsWithBooks.length,
-            itemBuilder: (context, index) {
-              final subject = subjectsWithBooks[index];
-              return _SubjectBooksCard(
-                subject: subject,
-                selectedSet: _selected,
-                onToggle: _toggleSelection,
-              );
-            },
+          body: Column(
+            children: [
+              // Search bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  onChanged: (value) => setState(() => _searchQuery = value),
+                  decoration: InputDecoration(
+                    hintText: 'Search subjects and books...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _searchQuery = ''),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                  ),
+                ),
+              ),
+              // Results
+              Expanded(
+                child: subjectsWithBooks.isEmpty
+                    ? const EmptyState(
+                        icon: Icons.search_off,
+                        title: 'No books found',
+                        subtitle: 'Try a different search term',
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: subjectsWithBooks.length,
+                        itemBuilder: (context, index) {
+                          final subject = subjectsWithBooks[index];
+                          return _SubjectBooksCard(
+                            subject: subject,
+                            selectedSet: _selected,
+                            onToggle: _toggleSelection,
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
         );
       },
@@ -389,9 +442,8 @@ class _SubjectBooksCard extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              QrCodeScreen(subject: subject, bookId: bookId),
+                        ScalePageRoute(
+                          page: QrCodeScreen(subject: subject, bookId: bookId),
                         ),
                       );
                     },

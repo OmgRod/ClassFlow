@@ -3,7 +3,7 @@
 
 !define APP_NAME "ClassFlow"
 !define COMPANY_NAME "OmgRod"
-!define VERSION "0.2.0"
+!define VERSION "1.0.0"
 !define INSTALLER_NAME "classflow-setup-${VERSION}.exe"
 
 ; Output installer

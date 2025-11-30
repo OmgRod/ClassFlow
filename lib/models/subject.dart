@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Subject {
   int id;
   String name; // Full uppercase, no spaces
@@ -29,6 +31,22 @@ class Subject {
   /// Check if name is valid (uppercase, no spaces)
   static bool isValidName(String name) {
     return name == name.toUpperCase() && !name.contains(' ');
+  }
+
+  /// Get display color from colorValue or generate from name
+  int get displayColor {
+    if (colorValue != null) return colorValue!;
+    // Generate color from name hash
+    final hash = name.hashCode;
+    final hue = (hash % 360).toDouble();
+    return HSLColor.fromAHSL(1.0, hue, 0.6, 0.5).toColor().toARGB32();
+  }
+
+  /// Get display initials (first 2 letters)
+  String get displayInitials {
+    if (name.isEmpty) return '??';
+    if (name.length == 1) return name;
+    return name.substring(0, 2);
   }
 
   Subject copyWith({

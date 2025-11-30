@@ -3,6 +3,7 @@ import 'subjects/subjects_screen.dart';
 import 'books/books_screen.dart';
 import 'timetable/timetable_screen.dart';
 import 'settings/settings_screen.dart';
+import '../widgets/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,13 +15,23 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    TimetableScreen(),
-    SubjectsScreen(),
-    BooksScreen(),
+  Widget get _todayScreen => SingleChildScrollView(
+    child: Column(children: const [TodayScheduleCard()]),
+  );
+
+  List<Widget> get _screens => [
+    _todayScreen,
+    const TimetableScreen(),
+    const SubjectsScreen(),
+    const BooksScreen(),
   ];
 
-  final List<String> _titles = const ['Timetable', 'Subjects', 'Books & QR'];
+  final List<String> _titles = const [
+    'Today',
+    'Timetable',
+    'Subjects',
+    'Books & QR',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.today_outlined),
+            selectedIcon: Icon(Icons.today),
+            label: 'Today',
+          ),
           NavigationDestination(
             icon: Icon(Icons.calendar_today_outlined),
             selectedIcon: Icon(Icons.calendar_today),
